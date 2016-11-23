@@ -16,6 +16,7 @@ from sklearn.cross_validation import ShuffleSplit
 import validation
 import zeropoints
 import pdf_calibration
+import hb_combination as hb
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -829,6 +830,15 @@ if __name__ == '__main__':
         alphas = hyperparams['alphas']
         beta = hyperparams['beta']
     
+        if pipe_params.fbad_prior == 'mag':
+            prior_params = np.load(pipe_params.prior_parameter_path)
+            z0t = prior_params['z0t']
+            kmt1 = prior_params['kmt1']
+            kmt2 = prior_params['kmt2']
+            alpha = prior_params['alpha']  
+            
+            best_prior_params = [z0t[0], kmt1[0], kmt2[0], alpha[0]]
+        
 
         with ProgressBar(nsteps) as bar:
             for i in range(nsteps):               
@@ -852,6 +862,33 @@ if __name__ == '__main__':
                     pz, zgrid = getPz('{0}/{1}'.format(folder, basename))
                     catalog = Table.read('{0}/{1}.zout'.format(folder, basename), format='ascii.commented_header')
         
+                    pz = pz**(1/alphas[itx])
+                    pz /= np.trapz(pz, zgrid, axis=1)[:, None]
+                    
+                    pzarr.append(pz)
+                    zouts.append(catalog)
+
+                if pipe_params.fbad_prior == 'flat':
+                    pzbad = np.ones_like(zgrid) # Flat prior
+                    pzbad /= np.trapz(pzbad, zgrid)
+                    
+                elif pipe_params.fbad_prior == 'vol':
+                    pzbad = hb.cosmo.differential_comoving_volume(zgrid)
+                    pzbad /= np.trapz(pzbad, zgrid) # Volume element prior (for our cosmology)
+
+                elif pipe_params.fbad_prior == 'mag':
+                    mags = np.array(photom[pipe_params.prior_colname])
+                    
+                    pzbad = priors.pz(zgrid, mags, *best_prior_params)
+                
+                pzarr_hb = HBpz(pzarr, zgrid, pzbad, beta)
+                hbcat = pz_to_catalog(pzarr_hb, zgrid) 
+                catpath = '{0}.{1}.cat'.format('HB', i+1)
+                hbcat.write('{0}/{1}'.format(folder, catpath), format='ascii.commented_header')
+                
+                np.savez('{0}/{1}.npz'.format(folder, 'HB_pz'), zgrid=zgrid, pz=pzarr_hb)
+    
+    
     
     """
     Section 5 - Merging and formatting outputs

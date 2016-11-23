@@ -546,8 +546,9 @@ if __name__ == "__main__":
         ol1, ol2, bias = calcStats(catalog['z_peak'][train_index], catalog['z_spec'][train_index])
         
         pz_mod = pz_train**(1/alphas_best)
-        bright = (photom['I_mag'][train_index] >= 12.)*(photom['I_mag'][train_index] < 20.)
-        faint = (photom['I_mag'][train_index] >= 20.)*(photom['I_mag'][train_index] < 24.)
+        mag_col = pipe_params.prior_colname
+        bright = (photom[mag_col][train_index] >= 12.)*(photom[mag_col][train_index] < 20.)
+        faint = (photom[mag_col][train_index] >= 20.)*(photom[mag_col][train_index] < 24.)
 
         ci_train_all, bins = pdf.calc_ci_dist(pz_mod, zgrid, zspec_train)
         ci_train_bright, bins = pdf.calc_ci_dist(pz_mod[bright], zgrid, zspec_train[bright])
