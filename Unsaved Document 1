@@ -1,0 +1,8 @@
+fnums = [7, 19, 25]
+
+for i, fx in enumerate(fnums):
+    f = fset.filters[i]
+    plt.plot(f.wave, f.response/np.trapz(f.response, f.wave), label=filts.filternames[fx])
+    
+plt.legend(loc='upper left')
+plt.show()
