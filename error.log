@@ -1,18 +1,23 @@
+/home/duncan/.local/lib/python2.7/site-packages/sklearn/cross_validation.py:44: DeprecationWarning: This module was deprecated in version 0.18 in favor of the model_selection module into which all the refactored classes and functions are moved. Also note that the interface of the new CV iterators are different from that of this module. This module will be removed in 0.20.
+  "This module will be removed in 0.20.", DeprecationWarning)
 /data2/ken/photoz/eazy-pype/validation.py:57: RuntimeWarning: invalid value encountered in log10
   color_a[:,1:] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
 /data2/ken/photoz/eazy-pype/validation.py:58: RuntimeWarning: invalid value encountered in log10
   color_b[:,:-1] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
-/data2/ken/photoz/eazy-pype/validation.py:63: RuntimeWarning: invalid value encountered in less
-  drop = np.logical_and(color_a < -1., color_b > 1.)
-/data2/ken/photoz/eazy-pype/validation.py:63: RuntimeWarning: invalid value encountered in greater
-  drop = np.logical_and(color_a < -1., color_b > 1.)
-/data2/ken/photoz/eazy-pype/validation.py:64: RuntimeWarning: invalid value encountered in greater
-  spike = np.logical_and(color_a > 2.5, color_b < -2.5)
-/data2/ken/photoz/eazy-pype/validation.py:64: RuntimeWarning: invalid value encountered in less
-  spike = np.logical_and(color_a > 2.5, color_b < -2.5)
-/data2/ken/photoz/eazy-pype/validation.py:67: RuntimeWarning: invalid value encountered in less
-  criteria2 = np.logical_or(color_a < -5, color_b > 5)
-/data2/ken/photoz/eazy-pype/validation.py:67: RuntimeWarning: invalid value encountered in greater
-  criteria2 = np.logical_or(color_a < -5, color_b > 5)
-/software/local/lib64/python2.7/site-packages/astropy-1.2.1-py2.7-linux-x86_64.egg/astropy/table/table.py:724: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
-  newcol = col[slice_]
+/software/local/lib64/python2.7/site-packages/numpy/ma/core.py:3158: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
+  dout = self.data[indx]
+/software/local/lib64/python2.7/site-packages/numpy/ma/core.py:3213: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
+  dout._mask = _mask[indx]
+/usr/lib64/python2.7/site-packages/astropy/table/column.py:1086: MaskedArrayFutureWarning: setting an item on a masked array which has a shared mask will not copy the mask and also change the original mask array in the future.
+Check the NumPy 1.11 release notes for more information.
+  ma.MaskedArray.__setitem__(self, index, value)
+/usr/lib64/python2.7/site-packages/astropy/table/column.py:268: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  return self.data.__eq__(other)
+hbcombination.py:147: RuntimeWarning: invalid value encountered in divide
+  pz /= norm[:, None]
+hbcombination.py:553: VisibleDeprecationWarning: using a boolean instead of an integer will result in an error in the future
+  pz = pz[sbset]
+/usr/bin/ipython:1: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  #!/usr/bin/python2
+/usr/bin/ipython:1: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  #!/usr/bin/python2

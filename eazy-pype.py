@@ -15,8 +15,9 @@ from sklearn.cross_validation import ShuffleSplit
 
 import validation
 import zeropoints
+import priors
 import pdf_calibration
-import hb_combination as hb
+import hbcombination as hb
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -359,9 +360,10 @@ if __name__ == '__main__':
     except:
         raise
     
-    if pipe_params.process_outliers:
+    if pipe_params.process_outliers:       
         print('Filtering for photometry outlier/bad photometry')
-        ec = ['Total_flux', 'E_Total_flux']
+        #ec = ['Total_flux', 'E_Total_flux']
+        ec = None
         new_path, bad_frac = validation.process('{0}/{1}'.format(pipe_params.working_folder, pipe_params.photometry_catalog),
                                                 cat_format=pipe_params.photometry_format,
                                                 exclude_columns = ec)
@@ -408,7 +410,7 @@ if __name__ == '__main__':
     # ... 
     
         
-    training_cut = (photometry[pipe_params.zspec_col] >= -1000.) 
+    training_cut = (photometry[pipe_params.zspec_col] >= 0.) 
     photometry_training = photometry[training_cut]
     fname = '{0}/training_all.cat'.format(test_folder)
     if os.path.isfile(fname):
@@ -625,6 +627,32 @@ if __name__ == '__main__':
             #zout_zp = Table.read('{0}/test_subset1_with_zp.{1}.zout'.format(outdir, template),
             #                     format='ascii.commented_header')           
     
+    
+
+    if pipe_params.do_subcats:
+        ### Make subset catalogs ###
+        maybe_mkdir('{0}/full'.format(pipe_params.working_folder))
+        # Build new catalog in EAZY format
+        subsize = pipe_params.block_size
+        nsteps = int(len(photometry)/subsize)+1
+        
+        with ProgressBar(nsteps) as bar:
+            for i in range(nsteps):
+                ### Make folders
+                subset_dir = '{0}/full/{1}'.format(pipe_params.working_folder, i+1)
+                maybe_mkdir(subset_dir)
+                
+                ### Save catalog
+                subset_photometry = Table(photometry[i*subsize:(i+1)*subsize])
+                subset_photometry.write('{0}/{1}.cat'.format(subset_dir, i+1),format='ascii.commented_header')
+                
+                subset_photometry['z_spec'] = np.zeros(len(subset_photometry))
+                subset_photometry.write('{0}/{1}.forstellar.cat'.format(subset_dir, i+1),format='ascii.commented_header')
+                
+                bar.update()    
+    
+    
+    
     """
     Section 3 - Running Full Catalogs
     
@@ -671,7 +699,7 @@ if __name__ == '__main__':
             with ProgressBar(nsteps) as bar:
                 for i in range(nsteps):
                     ezparam['CATALOG_FILE'] = '{0}/full/{1}/{2}.cat'.format(pipe_params.working_folder, i+1, i+1)
-                    ezparam['MAIN_OUTPUT_FILE'] = '{0}.{1}.cat'.format(template, i+1)
+                    ezparam['MAIN_OUTPUT_FILE'] = '{0}.{1}'.format(template, i+1)
                     
                     maybe_mkdir('{0}/testing/all_specz/'.format(pipe_params.working_folder))
                     outdir = '{0}/full/{1}'.format(pipe_params.working_folder, i+1)
@@ -756,7 +784,7 @@ if __name__ == '__main__':
             for i in range(nsteps):
                 ezparam['CATALOG_FILE'] = '{0}/full/{1}/{2}.forstellar.cat'.format(pipe_params.working_folder, 
                                                                                    i+1, i+1)
-                ezparam['MAIN_OUTPUT_FILE'] = '{0}.{1}.cat'.format('pickles', i+1)
+                ezparam['MAIN_OUTPUT_FILE'] = '{0}.{1}'.format('pickles', i+1)
                 
                 outdir = '{0}/full/{1}'.format(pipe_params.working_folder, i+1)
                 maybe_mkdir(outdir)
@@ -825,49 +853,87 @@ if __name__ == '__main__':
         nsteps = int(len(photometry)/subsize)+1    
                 
         folder = '{0}/testing/all_specz'.format(pipe_params.working_folder)
-        path = '{0}/HB_hyperparameters.npz'.format(folder)
-        hyperparams = np.load(path)
-        alphas = hyperparams['alphas']
-        beta = hyperparams['beta']
+        try:
+            path = '{0}/HB_hyperparameters_gal.npz'.format(folder)
+            hyperparams_gal = np.load(path)
+            
+            path = '{0}/HB_hyperparameters_agn.npz'.format(folder)
+            hyperparams_agn = np.load(path)
+            
+        except:
+            print('Hyper-parameters not found. Assuming calibration not run. Beginning HB calibration...')
+            command = ('python hbcombination.py -p {params}'.format(params = args.params))
+            
+            output = call(command, shell=True)
+                       
+            path = '{0}/HB_hyperparameters_gal.npz'.format(folder)
+            hyperparams_gal = np.load(path)
+            
+            path = '{0}/HB_hyperparameters_agn.npz'.format(folder)
+            hyperparams_agn = np.load(path)
+
+        
+        alphas_gal = hyperparams_gal['alphas']
+        beta_gal = hyperparams_gal['beta']
+            
+        alphas_agn = hyperparams_agn['alphas']
+        beta_agn = hyperparams_agn['beta']
+    
+        stop
     
         if pipe_params.fbad_prior == 'mag':
-            prior_params = np.load(pipe_params.prior_parameter_path)
+            folder = '{0}/testing/all_specz'.format(pipe_params.working_folder)
+            path = '{0}/HB_hyperparameters_gal.npz'.format(folder)
+            prior_params = np.load(path)
             z0t = prior_params['z0t']
             kmt1 = prior_params['kmt1']
             kmt2 = prior_params['kmt2']
             alpha = prior_params['alpha']  
             
-            best_prior_params = [z0t[0], kmt1[0], kmt2[0], alpha[0]]
-        
+            best_prior_params_gal = [z0t[0], kmt1[0], kmt2[0], alpha[0]]
+            
+            path_agn = '{0}/HB_hyperparameters_gal.npz'.format(folder)
+            prior_params = np.load(path_agn)
+            z0t = prior_params['z0t']
+            kmt1 = prior_params['kmt1']
+            kmt2 = prior_params['kmt2']
+            alpha = prior_params['alpha']  
+            best_prior_params_agn = [z0t[0], kmt1[0], kmt2[0], alpha[0]]
 
         with ProgressBar(nsteps) as bar:
             for i in range(nsteps):               
                 pzarr = []
                 zouts = []
+                
                 photometry_path = '{0}/full/{1}/{2}.cat'.format(pipe_params.working_folder, i+1, i+1)
                 photom = Table.read(photometry_path,
                                     format='ascii.commented_header')    
                 
+                AGN = (photom['AGN'] == 1)
+                GAL = np.invert(AGN)
+                
                 z_max_name = ['z_a', 'z_1', 'z_1']
-                titles = ['EAZY', 'XMM-COSMOS (Salvato+)', 'ATLAS (Brown+)']
+                titles = ['EAZY', 'ATLAS (Brown+)', 'XMM-COSMOS (Salvato+)']
                 
                 folder = '{0}/full/{1}'.format(pipe_params.working_folder, i+1)
                 
                 for itx, template in enumerate(pipe_params.templates):
-                    print(template)
+                    #print(template)
                     
                     """ Load Values/Arrays/Catalogs """
-                    folder = '{0}/testing/all_specz/{1}'.format(pipe_params.working_folder, template)
-                    basename='training_all_with_zp.{0}'.format(template)
-                    pz, zgrid = getPz('{0}/{1}'.format(folder, basename))
+                    basename='{0}.{1}'.format(template, i+1)
+                    pz, zgrid = hb.getPz('{0}/{1}'.format(folder, basename))
                     catalog = Table.read('{0}/{1}.zout'.format(folder, basename), format='ascii.commented_header')
-        
-                    pz = pz**(1/alphas[itx])
-                    pz /= np.trapz(pz, zgrid, axis=1)[:, None]
                     
                     pzarr.append(pz)
                     zouts.append(catalog)
-
+                
+                pzarr = np.array(pzarr)
+    
+                pzarr[GAL] = pzarr[GAL]**(1/alphas_gal[:, None, None])
+                pzarr[AGN] = pzarr[AGN]**(1/alphas_agn[:, None, None])
+                pzarr /= np.trapz(pzarr, zgrid, axis=-1)[None, :, None]
+                
                 if pipe_params.fbad_prior == 'flat':
                     pzbad = np.ones_like(zgrid) # Flat prior
                     pzbad /= np.trapz(pzbad, zgrid)
@@ -879,15 +945,22 @@ if __name__ == '__main__':
                 elif pipe_params.fbad_prior == 'mag':
                     mags = np.array(photom[pipe_params.prior_colname])
                     
-                    pzbad = priors.pz(zgrid, mags, *best_prior_params)
+                    pzbad = np.zeros_like(pzarr[0])
+                    pzbad[GAL] = priors.pzl(zgrid, mags[GAL], *best_prior_params_gal, lzc=0.001)
+                    pzbad[AGN] = priors.pzl(zgrid, mags[AGN], *best_prior_params_agn, lzc=0.000)
                 
-                pzarr_hb = HBpz(pzarr, zgrid, pzbad, beta)
-                hbcat = pz_to_catalog(pzarr_hb, zgrid) 
+                pzarr_hb = np.zeros_like(pzarr[0])
+                pzarr_hb[GAL] = hb.HBpz(pzarr[GAL], zgrid, pzbad[GAL], beta_gal, fbad_max = 0.05, fbad_min = 0.0)
+                pzarr_hb[AGN] = hb.HBpz(pzarr[AGN], zgrid, pzbad[AGN], beta_gal, fbad_max = 0.5, fbad_min = 0.2)
+                pzarr_hb /= np.trapz(pzarr_hb, zgrid, axis=1)[:, None]
+                
+                hbcat = hb.pz_to_catalog(pzarr_hb, zgrid, zouts[0], verbose=False) 
+                
                 catpath = '{0}.{1}.cat'.format('HB', i+1)
                 hbcat.write('{0}/{1}'.format(folder, catpath), format='ascii.commented_header')
                 
                 np.savez('{0}/{1}.npz'.format(folder, 'HB_pz'), zgrid=zgrid, pz=pzarr_hb)
-    
+                bar.update()
     
     
     """
@@ -895,6 +968,9 @@ if __name__ == '__main__':
     
     """
     
+    if pipe_params.do_merge:
+        command = ('python merge.py -p {params}'.format(params = args.params))                    
+        output = call(command, shell=True)   
     
     
     

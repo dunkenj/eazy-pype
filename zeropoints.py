@@ -1,4 +1,5 @@
 import numpy as np
+import re
 import array
 import glob
 import matplotlib.pyplot as plt
@@ -112,7 +113,7 @@ def getSEDs(basepath, temp_filt='photz.tempfilt'):
 
     return fnu, efnu, fit_seds, lc
 
-def plot_sed(gal_index, savepath=None, fig_format='pdf'):
+def plot_sed(base, gal_index, savepath=None, fig_format='pdf'):
     """ Plot fitted SEDs and residual from stellar mass code outputs
         
     Parameters
@@ -134,6 +135,26 @@ def plot_sed(gal_index, savepath=None, fig_format='pdf'):
         Figure
     
     """
+    fnu, efnu, fit_seds, wl = getSEDs(base, base+'.tempfilt')
+    flux = fnu
+    fluxerr = efnu
+    fit_flux = fit_seds
+    fwhm = 0.1*wl
+
+    print(wl)
+
+    translate = np.loadtxt(base+'.translate', dtype='str')
+    fnames = translate[:,0]
+    eazy_fno = translate[:,1]
+
+    isflux = [filt.endswith('_flux') for filt in fnames]
+
+    fnames = fnames[np.array(isflux)]
+    eazy_fno = eazy_fno[np.array(isflux)]    
+    eazy_fi = [int(re.split('F', fn)[1])-1 for fn in eazy_fno]
+    
+    print(fnames[eazy_fi])
+    
     Fig, Axes = plt.subplots(2, figsize=(7,5.5), sharex=True,
                              gridspec_kw={'height_ratios':[2.,1]})
     Ax = Axes[0]
@@ -153,6 +174,8 @@ def plot_sed(gal_index, savepath=None, fig_format='pdf'):
     upper = (residual >=3.5)
     lower = (residual <= -3.5)
     
+    for ixn, name in enumerate(fnames):
+        Ax.text(wl[ixn]/1.0e4, flux[gal_index][ixn]*1.1, re.split('_flux', name)[0])
    
     try:
         obs = (fluxerr[gal_index,:] >= 0)
@@ -225,6 +248,7 @@ def plot_sed(gal_index, savepath=None, fig_format='pdf'):
 def calc_zeropoints(base, verbose=False):
     fnu, efnu, fit_seds, wl = getSEDs(base, base+'.tempfilt')
 
+    #phot = Table.read(catalog, format='ascii.commented_header')
     #loadzp = np.loadtxt('/home/duncan/code/eazy-photoz/inputs/'+base+'.zeropoint',dtype='str')[:,1].astype('float')
 
     flux = fnu
@@ -244,10 +268,13 @@ def calc_zeropoints(base, verbose=False):
     medians = np.zeros(fnu.shape[1])
     scatter = np.zeros(fnu.shape[1])
 
-    Fig, Ax = plt.subplots(5,3, sharex=True, figsize = (12.*golden, 10))
+    Nfilts = len(isflux)
+    
+
+    Fig, Ax = plt.subplots(5, int(Nfilts/5)-1, sharex=True, figsize = (12.*golden, 10))
 
     for i, ax in enumerate(Ax.flatten()[:fnu.shape[1]]):
-        cut = ((fnu > 2*efnu) * (efnu > 0.))[:,i]
+        cut = ((fnu > 5*efnu) * (efnu > 0.))[:,i]
         ratio = (fit_seds[cut,i]-fnu[cut,i])/fit_seds[cut,i] + 1
         
         
@@ -280,6 +307,7 @@ def calc_zeropoints(base, verbose=False):
 
     Fig.subplots_adjust(left=0.05,right=0.98,bottom=0.065,top=0.98,wspace=0,hspace=0)
     #plt.show()
+
 
     output_path = base+'.zeropoint'
 
