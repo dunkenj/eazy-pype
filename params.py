@@ -14,10 +14,11 @@ zspec_col = 'z_spec'
 
 
 do_zp = False
-do_subcats = True
+do_subcats = False
 do_full = False
 do_stellar = False
-do_hb = True
+do_hb = False
+do_merge = True
 
 """
 Training parameters
@@ -59,7 +60,9 @@ Combination Parameters
 
 fbad_prior = 'mag' # 'flat', 'vol' or 'mag'
 prior_parameter_path = 'bootes_I_prior_coeff.npz'
+prior_fname = 'I'
 prior_colname = 'I_mag'
+alpha_colname = 'I_mag'
 
 
 """

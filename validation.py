@@ -21,7 +21,8 @@ def process(catalog_in, cat_format = 'ascii.commented_header',
     ID = input_data[id_col]
 
     filter_names = []
-
+    efilter_names = []
+    
     flux_col_end = flux_col
     fluxerr_col_end = fluxerr_col
 
@@ -41,11 +42,12 @@ def process(catalog_in, cat_format = 'ascii.commented_header',
             else:
                 fluxerrs = np.column_stack((fluxerrs,input_data[column_names[ii]].data))
             l+=1
-            
+            efilter_names.append(column_names[ii])
 
     fluxes = fluxes[:,1:-1]
     fluxerrs = fluxerrs[:,1:-1]
     fnames_full = filter_names[1:-1]
+    efnames_full = efilter_names[1:-1]
     fnames = [filt.split('_')[0] for filt in fnames_full]
 
     color_a = np.zeros(fluxes.shape)
@@ -86,7 +88,7 @@ def process(catalog_in, cat_format = 'ascii.commented_header',
         if verbose:
             print(name)
         input_data[name][anomalous[:,i]] = -90.
-        input_data[name+'err'][anomalous[:,i]] = -90.
+        input_data[efnames_full[i]][anomalous[:,i]] = -90.
     
     outname = catalog_in+'.mod'
     

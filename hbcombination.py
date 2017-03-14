@@ -23,6 +23,7 @@ from astropy.table import Table
 from astropy.convolution import convolve
 from astropy.stats import sigma_clipped_stats
 from astropy.utils.console import ProgressBar
+from astropy.visualization import LinearStretch, MinMaxInterval
 
 import priors
 import pdf_calibration as pdf
@@ -254,40 +255,51 @@ def doplot(gal):
     plt.show()
 
 
-def lnprior(alpha):
-    if 0.1 < alpha < 100.:
+def lnprior(mags, theta):
+    intcp, slope = theta
+    alphas = alphas_mag(mags, intcp, slope)
+       
+    if 0.5 < intcp < 30 and 0. < slope < 5. and (alphas > 0.).all():
         return 0.0
     return -np.inf
 
-def lnlike(alpha, pz, zgrid, zspec):
-    ci, bins = pdf.calc_ci_dist(pz**(1/alpha), zgrid, zspec)
+def lnlike(theta, mags, pz, zgrid, zspec):
+    intcp, slope = theta
+    ci, bins = pdf.calc_ci_dist(pz**(1/alphas_mag(mags, intcp, slope)[:, None]), zgrid, zspec)
     ci_dist = -1*np.log((ci[:80]-bins[:80])**2).sum()
     return ci_dist
 
-def lnprob(alpha, pz, zgrid, zspec):
-    lp = lnprior(alpha)
+def lnprob(theta, mags, pz, zgrid, zspec):
+    lp = lnprior(mags, theta)
     if not np.isfinite(lp):
         return -np.inf
-    return lp + lnlike(alpha, pz, zgrid, zspec)
+    return lp + lnlike(theta, mags, pz, zgrid, zspec)
 
-def fitalphas(pz, zgrid, zspec, alpha_start,
+def alphas_mag(mags, intcp, slope, base = 18.):
+    alt_mags = np.clip(mags, base, 35.)
+    alphas = intcp + (alt_mags - base)*slope
+    return alphas
+
+def fitalphas(mags, pz, zgrid, zspec, alpha_start,
               nwalkers=10, nsamples=10, fburnin=0.1, nthreads = 10):
     """ Fit prior functional form to observed dataset with emcee
     
     """
-    ndim = 1
+    ndim = 2
     burnin = int(nsamples*fburnin)    
     # Set up the sampler.
-    pos = [alpha_start + 0.5*np.random.randn(ndim) for i in range(nwalkers)]
+    pos = [np.array(alpha_start) + 0.5*np.random.randn(ndim) for i in range(nwalkers)]
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-                                    args=(pz_train, zgrid, zspec_train),
+                                    args=(mags, pz, zgrid, zspec),
                                     threads=nthreads)
 
 
     # Clear and run the production chain.
     sampler.run_mcmc(pos, nsamples, rstate0=np.random.get_state())
-    samples = sampler.chain[:, burnin:, :].reshape((-1, ndim))     
-    return np.median(samples), sampler
+    samples = sampler.chain[:, burnin:, :].reshape((-1, ndim))
+    i50, i16, i84 = np.percentile(samples[:,0], [50, 16, 84])
+    s50, s16, s84 = np.percentile(samples[:,1], [50, 16, 84])    
+    return sampler, i50, s50
 
 
 def find_ci_cut(pz, zgrid):
@@ -456,8 +468,8 @@ def pz_to_catalog(pz, zgrid, catalog, verbose=True):
             sec_lower[i] = -99.
             sec_area[i] = -99.
     
-    if verbose:
-        bar.update()
+        if verbose:
+            bar.update()
             
     output.add_column(catalog['id'])
     output.add_column(pri_peakz)
@@ -521,22 +533,22 @@ if __name__ == "__main__":
     
     z_max_name = ['z_a', 'z_1', 'z_1']
     titles = ['EAZY', 'ATLAS (Brown+)', 'XMM-COSMOS (Salvato+)']
-    filt = 'I'
+    filt = pipe_params.prior_fname
     
-    for sbset in [GAL, AGN]:
+    for sbset in [GAL]:
         pzarr = []
         zouts = []
-        alphas_median = []
+        alphas_fitted = []
         
         if (sbset == GAL).all():
             sbname = 'gal'
-            alphas_init = [1.4, 2.5, 5.]
+            alphas_init = [[1.5, 0.9], [2.5, 0.9], [5., 0.9]]
             fbad_max = 0.05
             fbad_min = 0.0
             lzc = 0.001
         else:
             sbname =  'agn'
-            alphas_init = [5., 5., 5.]
+            alphas_init = [[5., 0.9], [5., 0.9], [5., 0.9]]
             fbad_max = 0.5
             fbad_min = 0.3
             lzc = 0.0
@@ -555,7 +567,7 @@ if __name__ == "__main__":
             
             """ Split and Do Training """
             # ShuffleSplit into training and test
-            rs = ShuffleSplit(len(catalog), 1, test_size = pipe_params.test_fraction)
+            rs = ShuffleSplit(len(catalog), 1, test_size = 0.5) #pipe_params.test_fraction)
 
             for i, (train_index, test_index) in enumerate(rs):
                 zspec_train = catalog['z_spec'][train_index]
@@ -565,34 +577,43 @@ if __name__ == "__main__":
                 pz_test = pz[test_index]
             
             ol1, ol2, bias = calcStats(catalog['z_peak'][train_index], catalog['z_spec'][train_index])
-                
+            
+            mag_col = pipe_params.alpha_colname #pipe_params.prior_colname
+            mags = photom[sbset][mag_col][train_index]
+            
             # MCMC/Fit the best alpha to scale 
             print('Doing fits...')
-            alphas_best, sampler = fitalphas(pz_train[ol1], zgrid, zspec_train[ol1], alphas_init[itx],
-                                             nwalkers=10, nsamples=50, fburnin=0.1, nthreads = 10)
+            sampler, imed, smed = fitalphas(mags, pz_train, zgrid, zspec_train, alphas_init[itx],
+                                            nwalkers=20, nsamples=100, fburnin=0.2, nthreads = 10)
             
-            print(alphas_best)
-            bestfit = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
-            print(bestfit)
-            alphas_median.append(bestfit)
+
+            #bestfit = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
+            print('{0} {1}'.format(imed, smed))
             
-            alphas_best = bestfit
+            #alphas_best = bestfit
+            best_idx = np.argmax(sampler.flatlnprobability)
+            ibest, sbest = sampler.flatchain[best_idx]
+            print('{0} {1}'.format(ibest, sbest))
+            alphas_fitted.append([ibest, sbest])
             
-            
+            alphas_best = alphas_mag(photom[mag_col][sbset][train_index], ibest, sbest)[:, None]
             pz_mod = pz_train**(1/alphas_best)
-            mag_col = pipe_params.prior_colname
-            bright = (photom[mag_col][sbset][train_index] >= 12.)*(photom[mag_col][sbset][train_index] < 20.)
-            faint = (photom[mag_col][sbset][train_index] >= 20.)*(photom[mag_col][sbset][train_index] < 24.)
+
+            
+            
+            bright = (photom[mag_col][sbset][train_index] >= 22.)*(photom[mag_col][sbset][train_index] < 23.)
+            faint = (photom[mag_col][sbset][train_index] >= 23.)*(photom[mag_col][sbset][train_index] < 24.)
 
             ci_train_all, bins = pdf.calc_ci_dist(pz_mod, zgrid, zspec_train)
-            ci_train_bright, bins = pdf.calc_ci_dist(pz_mod[bright], zgrid, zspec_train[bright])
-            ci_train_faint, bins = pdf.calc_ci_dist(pz_mod[faint], zgrid, zspec_train[faint])
+            #ci_train_bright, bins = pdf.calc_ci_dist(pz_mod[bright], zgrid, zspec_train[bright])
+            #ci_train_faint, bins = pdf.calc_ci_dist(pz_mod[faint], zgrid, zspec_train[faint])
 
             
             ci_train_orig, bins = pdf.calc_ci_dist(pz_train, zgrid, zspec_train)
             
             ci_test_orig, bins = pdf.calc_ci_dist(pz_test, zgrid, zspec_test)
-            ci_test_mod, bins = pdf.calc_ci_dist(pz_test**(1./alphas_best), zgrid, zspec_test)
+            ci_test_mod, bins = pdf.calc_ci_dist(pz_test**(1./alphas_mag(photom[mag_col][sbset][test_index], ibest, sbest)[:, None]), 
+            zgrid, zspec_test)
             
             
             """
@@ -611,8 +632,19 @@ if __name__ == "__main__":
             leg1 = Ax[0].legend(loc='upper left', prop={'size':9})
             
             Ax[1].plot(bins, ci_train_all, 'k', label='All', lw=2)
-            Ax[1].plot(bins, ci_train_faint, color='firebrick', label='Faint', lw=2)
-            Ax[1].plot(bins, ci_train_bright, color='steelblue', label='Bright', lw=2)
+            
+            magrange = np.arange(17., 26., 2.)
+            magcols = plt.cm.viridis(MinMaxInterval()(magrange))
+            for ic, magc in enumerate(magrange):
+                sample = (photom[mag_col][sbset][train_index] >= magc-1.)*(photom[mag_col][sbset][train_index] < magc+1.)
+                ci_train_mag, bins = pdf.calc_ci_dist(pz_train[sample], zgrid, zspec_train[sample])
+                Ax[1].plot(bins, ci_train_mag, color=magcols[ic], ls='--', lw=2)
+
+                ci_train_mag, bins = pdf.calc_ci_dist(pz_mod[sample], zgrid, zspec_train[sample])
+                Ax[1].plot(bins, ci_train_mag, color=magcols[ic], lw=2)
+                
+            #Ax[1].plot(bins, ci_train_faint, color='firebrick', label='Faint', lw=2)
+            #Ax[1].plot(bins, ci_train_bright, color='steelblue', label='Bright', lw=2)
             Ax[1].plot([0,1],[0,1], ':', color='k', lw=2)
 
             leg2 = Ax[1].legend(loc='upper left', prop={'size':9})
@@ -625,9 +657,9 @@ if __name__ == "__main__":
             Fig.suptitle('{0} - PDF Calibration'.format(titles[itx]))            
             Fig.tight_layout()
             Fig.subplots_adjust(top=0.92)
-            
-            
+         
             folder = '{0}/plots'.format(pipe_params.working_folder)
+            
             maybemkdir(folder)
             plot_path = '{0}/pdf_calibration_{1}_{2}.pdf'.format(folder, sbname, template)
             Fig.savefig(plot_path, bbox_inches='tight', format='pdf')
@@ -637,13 +669,14 @@ if __name__ == "__main__":
             Re-normalise and append
             """
             # Re-normalise PDFs        
+            
+            alphas_best = alphas_mag(photom[mag_col][sbset], ibest, sbest)[:, None]
             pz = pz**(1/alphas_best)
             pz /= np.trapz(pz, zgrid, axis=1)[:, None]
             
             pzarr.append(pz)
             zouts.append(catalog)
         
-
         zspec = zouts[0]['z_spec']
         pzarr = np.array(pzarr)
 
@@ -674,17 +707,11 @@ if __name__ == "__main__":
             mags = np.array(photom[pipe_params.prior_colname])[sbset]
             
             pzbad = priors.pzl(zgrid, mags, *best, lzc=lzc)
+            
+            pzbad_nomag = np.ones_like(zgrid)
+            pzbad_nomag /= np.trapz(pzbad_nomag, zgrid)
+            pzbad[mags < -90.] = pzbad_nomag
 
-            prior_params = np.load('{0}/{1}_{2}_prior_coeff.npz'.format(pipe_params.working_folder, filt, 'agn'))
-            z0t = prior_params['z0t']
-            kmt1 = prior_params['kmt1']
-            kmt2 = prior_params['kmt2']
-            alpha = prior_params['alpha']  
-            
-            best = [z0t[0], kmt1[0], kmt2[0], alpha[0]]
-            mags = np.array(photom[pipe_params.prior_colname])[sbset]
-            
-            pzbad_agn = priors.pzl(zgrid, mags, *best, lzc=lzc)
 
         else:
             raise(ValueError('fbad parameter not recognised. Must be one of: flat/vol/mag'))
@@ -699,10 +726,8 @@ if __name__ == "__main__":
             pz_test = pz[test_index]
 
 
-        betas = np.linspace(1., 2.5, 21)
+        betas = np.linspace(1., 3., 21)
         ci_dists = np.zeros_like(betas)
-        
-        fbad_max = 1.
         
         for ia, beta in enumerate(betas):
             print(beta)
@@ -717,6 +742,7 @@ if __name__ == "__main__":
         fit = InterpolatedUnivariateSpline(betas, ci_dists, k=3)
         beta_fine = np.linspace(1., 3., 1001)
         beta_best = beta_fine[np.argmax(fit(beta_fine))]
+        print(beta_best)
         
         pzarr_hb = HBpz(pzarr, zgrid, pzbad, beta=beta_best, fbad_max = fbad_max, fbad_min=fbad_min)
 
@@ -743,8 +769,8 @@ if __name__ == "__main__":
         leg1 = Ax[0].legend(loc='upper left', prop={'size':9})
 
         
-        bright = np.array((photom['I_mag'] >= 12.)*(photom['I_mag'] < 20.))[sbset]
-        faint = np.array((photom['I_mag'] >= 20.)*(photom['I_mag'] < 24.))[sbset]
+        bright = np.array((photom[mag_col] >= 12.)*(photom[mag_col] < 20.))[sbset]
+        faint = np.array((photom[mag_col] >= 20.)*(photom[mag_col] < 24.))[sbset]
         
         ci_hb_bright, bins = pdf.calc_ci_dist(pzarr_hb[bright], zgrid, zspec[bright])
         ci_hb_faint, bins = pdf.calc_ci_dist(pzarr_hb[faint], zgrid, zspec[faint])
@@ -770,7 +796,7 @@ if __name__ == "__main__":
         
         Fig.savefig(plot_path, bbox_inches='tight', format='pdf')
 
-        #np.savez('temp_bak.npz', pzarr = pzarr, pzarr_hb = pzarr_hb)
+        np.savez('temp_bak.npz', pzarr = pzarr, pzarr_hb = pzarr_hb)
         
         """
         Verify Stats are Improved as Expected
@@ -822,7 +848,7 @@ if __name__ == "__main__":
         """
         folder = '{0}/testing/all_specz'.format(pipe_params.working_folder)
         path = '{0}/HB_hyperparameters_{1}.npz'.format(folder, sbname)
-        np.savez(path, alphas = alphas_median, beta = beta_best)
+        np.savez(path, alphas = alphas_fitted, beta = beta_best)
 
 
         def plot_pzs(idn):

@@ -366,7 +366,9 @@ if __name__ == '__main__':
         ec = None
         new_path, bad_frac = validation.process('{0}/{1}'.format(pipe_params.working_folder, pipe_params.photometry_catalog),
                                                 cat_format=pipe_params.photometry_format,
-                                                exclude_columns = ec)
+                                                exclude_columns = ec,
+                                                flux_col = pipe_params.flux_col,
+                                                fluxerr_col = pipe_params.fluxerr_col)
         photometry = Table.read(new_path, format=pipe_params.photometry_format)
    
    
@@ -878,13 +880,11 @@ if __name__ == '__main__':
             
         alphas_agn = hyperparams_agn['alphas']
         beta_agn = hyperparams_agn['beta']
-    
-        stop
-    
+        
         if pipe_params.fbad_prior == 'mag':
+            filt = pipe_params.prior_fname
             folder = '{0}/testing/all_specz'.format(pipe_params.working_folder)
-            path = '{0}/HB_hyperparameters_gal.npz'.format(folder)
-            prior_params = np.load(path)
+            prior_params = np.load('{0}/{1}_{2}_prior_coeff.npz'.format(pipe_params.working_folder, filt, 'gal'))
             z0t = prior_params['z0t']
             kmt1 = prior_params['kmt1']
             kmt2 = prior_params['kmt2']
@@ -892,8 +892,7 @@ if __name__ == '__main__':
             
             best_prior_params_gal = [z0t[0], kmt1[0], kmt2[0], alpha[0]]
             
-            path_agn = '{0}/HB_hyperparameters_gal.npz'.format(folder)
-            prior_params = np.load(path_agn)
+            prior_params = np.load('{0}/{1}_{2}_prior_coeff.npz'.format(pipe_params.working_folder, filt, 'agn'))
             z0t = prior_params['z0t']
             kmt1 = prior_params['kmt1']
             kmt2 = prior_params['kmt2']
@@ -925,14 +924,17 @@ if __name__ == '__main__':
                     pz, zgrid = hb.getPz('{0}/{1}'.format(folder, basename))
                     catalog = Table.read('{0}/{1}.zout'.format(folder, basename), format='ascii.commented_header')
                     
+                    alphas_best_gal = hb.alphas_mag(photom[pipe_params.alpha_colname][GAL], *alphas_gal[itx])[:, None]
+                    pz[GAL] = pz[GAL]**(1/alphas_best_gal)
+                    
+                    alphas_best_agn = hb.alphas_mag(photom[pipe_params.alpha_colname][AGN], *alphas_agn[itx])[:, None]
+                    pz[AGN] = pz[AGN]**(1/alphas_best_agn)
+        
                     pzarr.append(pz)
                     zouts.append(catalog)
                 
                 pzarr = np.array(pzarr)
-    
-                pzarr[GAL] = pzarr[GAL]**(1/alphas_gal[:, None, None])
-                pzarr[AGN] = pzarr[AGN]**(1/alphas_agn[:, None, None])
-                pzarr /= np.trapz(pzarr, zgrid, axis=-1)[None, :, None]
+                pzarr /= np.trapz(pzarr, zgrid, axis=-1)[:, :, None]
                 
                 if pipe_params.fbad_prior == 'flat':
                     pzbad = np.ones_like(zgrid) # Flat prior
@@ -949,9 +951,13 @@ if __name__ == '__main__':
                     pzbad[GAL] = priors.pzl(zgrid, mags[GAL], *best_prior_params_gal, lzc=0.001)
                     pzbad[AGN] = priors.pzl(zgrid, mags[AGN], *best_prior_params_agn, lzc=0.000)
                 
+                    pzbad_nomag = np.ones_like(zgrid)
+                    pzbad_nomag /= np.trapz(pzbad_nomag, zgrid)
+                    pzbad[mags < -90.] = pzbad_nomag
+                
                 pzarr_hb = np.zeros_like(pzarr[0])
-                pzarr_hb[GAL] = hb.HBpz(pzarr[GAL], zgrid, pzbad[GAL], beta_gal, fbad_max = 0.05, fbad_min = 0.0)
-                pzarr_hb[AGN] = hb.HBpz(pzarr[AGN], zgrid, pzbad[AGN], beta_gal, fbad_max = 0.5, fbad_min = 0.2)
+                pzarr_hb[GAL] = hb.HBpz(pzarr[:, GAL], zgrid, pzbad[GAL], beta_gal, fbad_max = 0.05, fbad_min = 0.0)
+                pzarr_hb[AGN] = hb.HBpz(pzarr[:, AGN], zgrid, pzbad[AGN], beta_agn, fbad_max = 0.5, fbad_min = 0.2)
                 pzarr_hb /= np.trapz(pzarr_hb, zgrid, axis=1)[:, None]
                 
                 hbcat = hb.pz_to_catalog(pzarr_hb, zgrid, zouts[0], verbose=False) 

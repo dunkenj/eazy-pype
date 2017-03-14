@@ -87,6 +87,7 @@ if __name__ == "__main__":
     zout = Table.read('{0}/photoz_all_merged.fits'.format(folder), format='fits')
     
     AGN = np.logical_or(photometry['XrayAGN'] == 1, photometry['IRAGN'] > 0.)
+    GAL = np.invert(AGN)
     
     """
     SPEC-Z ANALYSIS
@@ -99,110 +100,123 @@ if __name__ == "__main__":
     
     chi_best = np.nanmin(all_chis, axis=0)
 
-    star = (chi_best < zout['chi_r_stellar']).astype('int')
+    star = (chi_best > zout['chi_r_stellar']).astype('int')
     #qc = (zout['z1_max']-zout['z1_min']/(1+zout['z1_median']) < 0.5)
     #qc = (chi_best < 4.) #np.percentile(chi_best[AGN], 95))
+    """
 
-    photometry_qc_cuts = (photometry['FLAG_DEEP'] == 1) * np.invert(AGN) #* qc #* (star == 0) * qc # (STAR == 0) based on star classification
+    for sbset in [GAL, AGN]:
 
-    z_spec_all = photometry['z_spec']
-    zs_sample_idx = np.logical_and(z_spec_all >= 0., photometry_qc_cuts)
-
-    zsets = ['zpeak_eazy', 'zpeak_atlas', 'zpeak_cosmos', 'z1_median']
-    names = ['EAZY', 'Atlas', 'XMM-COSMOS', 'HB']
-    cols = ['steelblue', 'olivedrab', 'firebrick', '0.3']
-    
-    zsmin = z_spec_all[z_spec_all > 0.].min()
-    zsmax = z_spec_all[z_spec_all > 0.].max()
-
-    #zsbins = 10**(np.linspace(0.05, 0.90309, 15)) - 1
-    zsbins = np.linspace(0, 1.5, 16)
-    zsbins= np.append(zsbins, np.linspace(2., 5., 4))
-
-    cc = zs_sample_idx.data * (zout['z1_median'] >= 0.)
-
-    stats = []
-    
-    zz = zout[cc]
-    zspec = z_spec_all[cc]
-    
-    zmids = 0.5*(zsbins[:-1]+zsbins[1:])
-    
-    for iz, zmin in enumerate(zsbins[:-1]):
-        
-        zmax = zsbins[iz+1]
-        
-        zcut = np.logical_and(zspec > zmin, zspec < zmax)
-        print(zcut.sum())
-        
-        
-        st = []
-        for zset in zsets:
-            bs = []
+        if (sbset == GAL).all():
+            zsbins = np.insert(np.linspace(0.0, 1.5, 7), 1, 0.01)
+            zsbins= np.append(zsbins, np.linspace(2., 6., 4))
+            sbset_name = 'gal'
+        else:
+            zsbins = np.insert(np.linspace(0, 5, 6), 1, 0.5)
+            sbset_name = 'agn'
             
-            zphot = zz[zset][zcut]
-            zsc = zspec[zcut]
-            ix = np.arange(len(zsc)).astype('int')
-            
-            samples = bootstrap(ix, bootnum=50)
-            
-            for sample in samples:
-                bs.append(calcStats(zphot[sample.astype('int')], zsc[sample.astype('int')]))
-            
-            st.append(bs)
+        photometry_qc_cuts = np.invert(star) #based on star classification
+
+        z_spec_all = photometry['z_spec']
+        zs_sample_idx = np.logical_and(z_spec_all >= 0., photometry_qc_cuts)
+
+        zsets = ['zpeak_eazy', 'zpeak_atlas', 'zpeak_cosmos', 'z1_median', 'za_hb']
+        names = ['EAZY', 'Atlas', 'XMM-COSMOS', 'HB', 'HB Peak']
+        cols = ['steelblue', 'olivedrab', 'firebrick', '0.3', '0.6']
         
-        
-        stats.append(st)
-        
-    stats = np.array(stats)
-    #stats = stats[:, :, :, 1:-1]
-    
-    smean = stats[:, :, :, 1:-3].mean(2)
-    sstd = stats[:, :, :, 1:-3].std(2)
-    
-    
-    Fig, Ax = plt.subplots(2, 2, figsize=(10.5, 5.), sharex=True)
-    Ax = Ax.flatten()
-    
-    ymaxes = [1.5, 0.12, 1.5, 1.5]
-    ymins = [0.005, -0.12, 0.005, 0.005]
-    yscales = ['log', 'linear', 'log', 'log']
-    
-    ylabels = [r'$\sigma_{\rm{NMAD}}$', r'bias', r'Outlier Fraction', r'$\sigma_{\rm{OL}}$']
-    
-    for j in range(len(Ax)):
-    
-        for i, zset in enumerate(zsets):
-            Ax[j].fill_between(zmids, smean[:, i, j]+sstd[:, i, j], 
-                                smean[:,i,j]-sstd[:,i,j],
-                                color=cols[i], alpha=0.5)      
-            Ax[j].plot(zmids, smean[:, i, j], color=cols[i], label=names[i], lw=2)
+        zsmin = z_spec_all[z_spec_all > 0.].min()
+        zsmax = z_spec_all[z_spec_all > 0.].max()
+
+        #zsbins = 10**(np.linspace(0.05, 0.90309, 15)) - 1
 
 
-        Ax[j].set_xscale('log')
-        Ax[j].set_xlabel('z')
-        Ax[j].set_ylabel(ylabels[j])
-        Ax[j].set_yscale(yscales[j])
-        Ax[j].set_ylim(ymins[j], ymaxes[j])
-        Ax[j].set_xticks([0.1, 0.5, 1., 2., 3., 4., 5.])
-        Ax[j].set_xticklabels(['0.1', '0.5', '1', '2', '3', '4', '5'])
-        Ax[j].set_xlim([0.05, 4.5])
-        #Ax[j].ticklabel_format(axis='y', style='plain')
-        #Ax[0].set_xscale('log')
-        #Ax[1].set_xscale('log')
-        #Ax[j].set_yscale('log')
-        #Ax[j].set_ylim([0.01, 1.])
-    
-    Leg = Ax[-1].legend(loc='upper left', ncol=2)
-    Leg.draw_frame(False)
-    Fig.subplots_adjust(right=0.95, top=0.95, wspace=0.22, hspace=0.)
-    plt.show()
-    
-    
-    stop
-    
+        cc = zs_sample_idx.data * (zout['z1_median'] >= 0.) * sbset
+
+        stats = []
+        
+        zz = zout[cc]
+        zspec = z_spec_all[cc]
+        
+        zmids = 0.5*(zsbins[:-1]+zsbins[1:])
+        
+        for iz, zmin in enumerate(zsbins[:-1]):
+            
+            zmax = zsbins[iz+1]
+            
+            zcut = np.logical_and(zspec > zmin, zspec < zmax)
+            print(zcut.sum())
+            
+            
+            st = []
+            for zset in zsets:
+                bs = []
+                
+                zphot = zz[zset][zcut]
+                zsc = zspec[zcut]
+                ix = np.arange(len(zsc)).astype('int')
+                
+                samples = bootstrap(ix, bootnum=50)
+                
+                for sample in samples:
+                    bs.append(calcStats(zphot[sample.astype('int')], zsc[sample.astype('int')]))
+                
+                st.append(bs)
+            
+            
+            stats.append(st)
+            
+        stats = np.array(stats)
+        #stats = stats[:, :, :, 1:-1]
+        
+        smean = stats[:, :, :, 1:-3].mean(2)
+        sstd = stats[:, :, :, 1:-3].std(2)
+        
+        
+        Fig, Ax = plt.subplots(2, 2, figsize=(10.5, 5.), sharex=True)
+        Ax = Ax.flatten()
+        
+        ymaxes = [1.5, 0.12, 1.5, 1.5]
+        ymins = [0.005, -0.12, 0.005, 0.005]
+        yscales = ['log', 'linear', 'log', 'log']
+        
+        ylabels = [r'$\sigma_{\rm{NMAD}}$', r'bias', r'Outlier Fraction', r'$\sigma_{\rm{OL}}$']
+        
+        for j in range(len(Ax)):
+        
+            for i, zset in enumerate(zsets):
+                Ax[j].fill_between(zmids, smean[:, i, j]+sstd[:, i, j], 
+                                    smean[:,i,j]-sstd[:,i,j],
+                                    color=cols[i], alpha=0.5)      
+                Ax[j].plot(zmids, smean[:, i, j], color=cols[i], label=names[i], lw=2)
+
+
+            Ax[j].set_xscale('log')
+            Ax[j].set_xlabel('z')
+            Ax[j].set_ylabel(ylabels[j])
+            Ax[j].set_yscale(yscales[j])
+            Ax[j].set_ylim(ymins[j], ymaxes[j])
+            Ax[j].set_xticks([0.1, 0.5, 1., 2., 3., 4., 5.])
+            Ax[j].set_xticklabels(['0.1', '0.5', '1', '2', '3', '4', '5'])
+            Ax[j].set_xlim([0.1, 4.5])
+            #Ax[j].ticklabel_format(axis='y', style='plain')
+            #Ax[0].set_xscale('log')
+            #Ax[1].set_xscale('log')
+            #Ax[j].set_yscale('log')
+            #Ax[j].set_ylim([0.01, 1.])
+        
+        Leg = Ax[-1].legend(loc='upper left', ncol=2)
+        Leg.draw_frame(False)
+        Fig.subplots_adjust(right=0.95, top=0.95, wspace=0.22, hspace=0.)
+        Fig.tight_layout()
+        Fig.savefig('{0}/plots/{1}_photoz_stats.pdf'.format(pipe_params.working_folder, sbset_name), format='pdf',
+                    bbox_inches='tight')
+        plt.show()
+        
+    """
+
 
     """
+    
     PAIRS ANALYSIS
     
     """
@@ -232,24 +246,25 @@ if __name__ == "__main__":
             dr[i] = np.sqrt((np.diff(coords[pair,:], axis=0)**2).sum())
 
         above_min = (dr > mindist)
-        histp = np.histogram(dzp[above_min], range=(-1,1), bins=Nbins)
+        histp = np.histogram(dzp[above_min], range=(-0.3, 0.3), bins=Nbins)
         
         return histp, z1, z2, dr
 
-    zsets = ['zpeak_eazy', 'zpeak_atlas', 'zpeak_cosmos', 'z1_median']
-    names = ['EAZY', 'Atlas', 'XMM-COSMOS', 'HB']
+    zsets = ['zpeak_eazy', 'zpeak_atlas', 'zpeak_cosmos', 'z1_median', 'za_hb']
+    names = ['EAZY', 'Atlas', 'XMM-COSMOS', 'HB Median', 'HB Peak']
     
     #zsets = ['zm_eazy']
     #names = ['EAZY']
     #zsets = ['z1_median']
     #names = ['HB']
     
-    Hlims = [20., 20.5, 21., 21.5, 22., 22.5, 23., 23.5, 24.]
+    Hlims = [19., 20., 21., 22., 23., 24.] #, 22.5, 23., 23.5, 24.]
     
+    mag_name = pipe_params.prior_fname
     
     pair_scatter = Table()
 
-    pair_scatter['I_limit'] = Hlims
+    pair_scatter['{0}_limit'.format(mag_name)] = Hlims
 
     diff_all = []
 
@@ -270,9 +285,8 @@ if __name__ == "__main__":
             print mag
         
             
-
-            cut = ((photometry['FLAG_DEEP'] == 1) * (photometry['CLASS_STAR'] < 0.9) *
-                   (photometry['I_mag'] < mag) * (zout[zset] >= 0.))
+            mag_cut = np.logical_and(photometry['{0}_mag'.format(mag_name)] < mag, photometry['{0}_mag'.format(mag_name)] > 0.)
+            cut = mag_cut * (zout[zset] >= 0.)
             #olprob = np.percentile(zout['Outlier_Prob'][cut], 90)
             #cut = cut #* (zout['Outlier_Prob'] < olprob)
             
@@ -294,13 +308,13 @@ if __name__ == "__main__":
 
             z = zout[zset][cut] + 0.01*(np.random.rand(len(coords)) - 0.5)
 
-            histp, z1, z2, dr = find_pair_zdist(coords, zout[zset][cut], 101, dist, mindist)
+            histp, z1, z2, dr = find_pair_zdist(coords, zout[zset][cut], 201, dist, mindist)
 
             histr = []
-            bar = ProgressBar(20)
-            for i in range(20):
+            bar = ProgressBar(3)
+            for i in range(3):
                 #print i
-                new_coords = np.copy(coords_full[photometry['FLAG_DEEP'] == 1])
+                new_coords = np.copy(coords_full)
                 ix = np.random.randint(len(new_coords), size=len(z))
                 new_coords = new_coords[ix]
                 
@@ -309,7 +323,7 @@ if __name__ == "__main__":
 
                 new_coords += np.array([or1, or2]).T
                 
-                r1, z1, z2, dr = find_pair_zdist(new_coords, z, 101, dist, mindist)
+                r1, z1, z2, dr = find_pair_zdist(new_coords, z, 201, dist, mindist)
                 histr.append(r1[0])
                 bar.update()
 
@@ -318,6 +332,7 @@ if __name__ == "__main__":
 
             weights = hist_rand/histr.std(0)
             weights[np.isnan(weights)] = 0.
+            weights[np.isinf(weights)] = 1.
             weights[weights < 1] = 0.
             
             diff = histp[0]-hist_rand
@@ -325,8 +340,8 @@ if __name__ == "__main__":
             pdz = diff / np.trapz(np.maximum(diff, 0.), bins)
             cumhist = np.cumsum(np.maximum(pdz,0)*np.diff(bins)[0])
             
-            pmin = griddata(diff[:51], bins[:51], 0.5*np.max(diff))
-            pmax = griddata(diff[50:], bins[50:], 0.5*np.max(diff))
+            pmin = griddata(diff[:101], bins[:101], 0.5*np.max(diff))
+            pmax = griddata(diff[100:], bins[100:], 0.5*np.max(diff))
             sigma_fwhm[jmag] = pmax-pmin
             
             fit_l = fitting.LevMarLSQFitter()
@@ -335,8 +350,8 @@ if __name__ == "__main__":
             g_init = models.Gaussian1D(np.max(diff), mean=0., stddev=0.1)
             l_init = models.Lorentz1D(amplitude=np.max(diff), x_0=0., fwhm=0.1)
 
-            g = fit_g(g_init, bins[25:76], diff[25:76], weights=weights[25:76])
-            l = fit_l(l_init, bins[25:76], diff[25:76], weights=weights[25:76])
+            g = fit_g(g_init, bins[50:151], diff[50:151], weights=weights[50:151])
+            l = fit_l(l_init, bins[50:151], diff[50:151], weights=weights[50:151])
             
             sigma_gaussian[jmag] = g.parameters[-1]/np.sqrt(2)
             sigma_lorentzian[jmag] = l.parameters[-1]/2.
@@ -390,7 +405,7 @@ if __name__ == "__main__":
     Ax.set_ylabel('N')
     #Ax.set_ylim([-50, 790])
     #Ax.set_xlim([-0.5, 0.5])
-    Leg.draw_frame(False)
+    #Leg.draw_frame(False)
     Fig.subplots_adjust(bottom=0.15, left=0.12, top=0.95, right=0.95)
     #Fig.savefig('pairs_error_example_HB_21.5.pdf', format='pdf', bbox_inches='tight')
     plt.show()
@@ -403,18 +418,22 @@ if __name__ == "__main__":
     #        pair_scatter['HB_sigma_g']-pair_scatter['HB_sigma_gerr'],
     #        color='0.8')
 
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['EAZY_sigma_fwhm']/2.355,
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['EAZY_sigma_fwhm']/2.355,
             '--', lw=2, color='steelblue',
             label='EAZY')
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['Atlas_sigma_fwhm']/2.355,
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['Atlas_sigma_fwhm']/2.355,
             '-.', lw=2, color='olivedrab',
             label='Atlas')
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['XMM-COSMOS_sigma_fwhm']/2.355,
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['XMM-COSMOS_sigma_fwhm']/2.355,
             ':', lw=2, color='firebrick',
             label='XMM-COSMOS')
 
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['HB_sigma_fwhm']/2.355,
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['HB Median_sigma_fwhm']/2.355,
             lw=4, color='0.3',
+            label='Hierarchical Bayesian')
+
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['HB Peak_sigma_fwhm']/2.355,
+            lw=4, color='0.6',
             label='Hierarchical Bayesian')
 
     Ax.plot(21.6, 0.035, 'o', ms=9, mew=1.5, color='steelblue')
@@ -437,24 +456,29 @@ if __name__ == "__main__":
 
     Fig, Ax = plt.subplots(1, figsize=(6.5,4))
 
-    Ax.fill_between(pair_scatter['I_limit'], 
+    Ax.fill_between(pair_scatter['{0}_limit'.format(mag_name)], 
             pair_scatter['HB_sigma_g']+pair_scatter['HB_sigma_gerr'],
             pair_scatter['HB_sigma_g']-pair_scatter['HB_sigma_gerr'],
             color='0.8')
 
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['EAZY_sigma_g'],
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['EAZY_sigma_g'],
             '--', lw=2, color='steelblue',
             label='EAZY')
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['Atlas_sigma_g'],
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['Atlas_sigma_g'],
             '-.', lw=2, color='olivedrab',
             label='Atlas')
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['XMM-COSMOS_sigma_g'],
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['XMM-COSMOS_sigma_g'],
             ':', lw=2, color='firebrick',
             label='SWIRE')
 
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['HB_sigma_g'],
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['HB Median_sigma_g'],
             lw=4, color='0.3',
             label='Hierarchical Bayesian')
+
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['HB Peak_sigma_g'],
+            lw=4, color='0.3',
+            label='Hierarchical Bayesian')
+
 
     Ax.plot(21.6, 0.035, 'o', ms=9, mew=1.5, color='steelblue')
     Ax.plot(21.55, 0.039, 'd', ms=9, mew=1.5, color='firebrick')
@@ -479,22 +503,22 @@ if __name__ == "__main__":
 
 
 
-    Ax.fill_between(pair_scatter['I_limit'], 
+    Ax.fill_between(pair_scatter['{0}_limit'.format(mag_name)], 
             pair_scatter['HB_sigma_l']+pair_scatter['HB_sigma_lerr'],
             pair_scatter['HB_sigma_l']-pair_scatter['HB_sigma_lerr'],
             color='0.8')
 
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['EAZY_sigma_l'],
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['EAZY_sigma_l'],
             '--', lw=2, color='steelblue',
             label='EAZY')
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['Atlas_sigma_l'],
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['Atlas_sigma_l'],
             '-.', lw=2, color='olivedrab',
             label='Atlas')
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['XMM-COSMOS_sigma_l'],
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['XMM-COSMOS_sigma_l'],
             ':', lw=2, color='firebrick',
             label='SWIRE')
 
-    Ax.plot(pair_scatter['I_limit'], pair_scatter['HB_sigma_l'],
+    Ax.plot(pair_scatter['{0}_limit'.format(mag_name)], pair_scatter['HB_sigma_l'],
             lw=4, color='0.3',
             label='Hierarchical Bayesian')
 

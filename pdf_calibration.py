@@ -117,7 +117,7 @@ def calc_HPDci(pz, zgrid, specz, dz = 0.005):
    
 def calc_ci_dist(pz, zgrid, specz):
     ci_pdf = calc_HPDciv(pz, zgrid, specz)
-    nbins = 100.
+    nbins = 100
     hist, bin_edges = np.histogram(ci_pdf, bins=nbins, range=(0,1), normed=True)
     cumhist = np.cumsum(hist)/nbins
     bin_max = 0.5*(bin_edges[:-1]+bin_edges[1:])

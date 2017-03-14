@@ -111,6 +111,10 @@ if __name__ == "__main__":
         
         HB_pz[int(i*subsize):int((1+i)*subsize), :] = pz        
         
+        za = zgrid[np.argmax(pz, axis=1)]
+        
+        sub_cat['za_hb'] = za
+        
         """
         Individual Sets
         """
@@ -131,7 +135,7 @@ if __name__ == "__main__":
             sub_cat['chi_r_{0}'.format(template)] = chi_r
             sub_cat['l68_{0}'.format(template)] = zout['l68']
             sub_cat['u68_{0}'.format(template)] = zout['u68']
-
+            sub_cat['nfilt_{0}'.format(template)] = zout['nfilt']
         
 
         
@@ -144,7 +148,7 @@ if __name__ == "__main__":
         basename='{0}.{1}'.format('pickles', i+1)
         stellar = Table.read('{0}/{1}.zout'.format(folder, basename), format='ascii.commented_header')
         star_best = np.zeros(len(stellar), dtype='S6')
-        star_best[stellar['temp_1'] >= -90] = st_names[stellar['temp_1']][stellar['temp_1'] >= -90]
+        star_best[stellar['temp_1'] >= -90] = st_names[stellar['temp_1']-1][stellar['temp_1'] >= -90]
         
         schi = stellar['chi_1']/(stellar['nfilt']-1)
         schi[stellar['chi_1'] == -99.] = -99.

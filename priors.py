@@ -97,7 +97,11 @@ def lnprior(theta, m):
 def lnlike(theta, z, m):
     z0t, kmt1, kmt2, alpha1 = theta
     model = pzv(z, m, z0t, kmt1, kmt2, alpha1)
-    return np.nansum(np.log(model))
+    like = np.nansum(np.log(model))
+    if not np.isfinite(like):
+        return -np.inf
+    
+    return like
 
 def lnprob(theta, z, m):
     lp = lnprior(theta, m)
@@ -115,7 +119,7 @@ def fitpriors(data, mag_col, z_col, start,
 
     #data = Table.read(catalog_path, format=catalog_format)
 
-    cut = (data[z_col] > 0.001)*(data[mag_col] > 0.) # Cut -99s etc
+    cut = (data[z_col] > 0.001)*(data[mag_col] > 14.) # Cut -99s etc
     data = data[cut][::nskip]
 
     zdata = data[z_col].data
@@ -198,14 +202,14 @@ if __name__ == '__main__':
         if (sbset == GAL).all():
             sbname = 'gal'
             start = np.array([0.3285, -0.1681, 0.02957, 0.829])
-            nskip = 5
+            nskip = 17
             
         else:
             sbname =  'agn'
-            start = np.array([0.112, -0.1268, 0.0437, 1.0])
+            start = np.array([0.54, -0.18, 0.028, 1.39])
             nskip = 1
             
-        mags = ['I']
+        mags = ['ks']
         #['I', 'Ks', 'ch1']
         
         
