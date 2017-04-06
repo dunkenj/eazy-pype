@@ -15,13 +15,14 @@ zspec_col = 'z_spec'
 flux_col = 'flux'
 fluxerr_col = 'fluxerr'
 
-
 do_zp = False
+do_zp_tests = False
+
 do_subcats = False
 do_full = False
 do_stellar = False
-do_hb = True
-do_merge = True
+do_hb = False
+do_merge = False
 
 """
 Training parameters
@@ -31,7 +32,7 @@ Ncrossval = 1
 test_fraction = 0.2
 
 process_outliers = True
-
+correct_extinction = True
 
 """
 Fitting Parameters

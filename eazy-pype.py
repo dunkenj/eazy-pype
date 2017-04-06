@@ -7,6 +7,9 @@ import multiprocessing as mp
 from subprocess import call
 
 import smpy.smpy as S
+
+import matplotlib.pyplot as plt
+
 #from astropy.table import Table, Column
 from astropy import units as u
 from astropy.table import Table
@@ -360,15 +363,19 @@ if __name__ == '__main__':
     except:
         raise
     
-    if pipe_params.process_outliers:       
+    if pipe_params.process_outliers:
+         
         print('Filtering for photometry outlier/bad photometry')
         #ec = ['Total_flux', 'E_Total_flux']
         ec = None
         new_path, bad_frac = validation.process('{0}/{1}'.format(pipe_params.working_folder, pipe_params.photometry_catalog),
+                                                '{0}/{1}'.format(pipe_params.working_folder, pipe_params.translate_file),
+                                                '{0}/{1}'.format(pipe_params.working_folder, pipe_params.filter_file),
                                                 cat_format=pipe_params.photometry_format,
                                                 exclude_columns = ec,
                                                 flux_col = pipe_params.flux_col,
-                                                fluxerr_col = pipe_params.fluxerr_col)
+                                                fluxerr_col = pipe_params.fluxerr_col,
+                                                correct_extinction=pipe_params.correct_extinction)
         photometry = Table.read(new_path, format=pipe_params.photometry_format)
    
    
@@ -429,6 +436,18 @@ if __name__ == '__main__':
             os.remove(fname)
         training_subset = photometry_training[np.sort(train_index)]
         training_subset.write(fname, format='ascii.commented_header')
+
+        zbins = [0., 0.2, 0.4, 0.6, 0.8, 1., 1.5, 2.5] #
+        zs_train = training_subset['z_spec']
+        
+        for iz, zl in enumerate(zbins[:-1]):
+            zu = zbins[iz+1]
+            
+            subset = np.logical_and(zs_train >= zl, zs_train < zu)
+            fname = '{0}/training_subset{1}_zs{2}.cat'.format(test_folder, i+1, iz)
+            training_subset[subset].write(fname, format='ascii.commented_header')
+
+
 
         fname = '{0}/test_subset{1}.cat'.format(test_folder, i+1)
         if os.path.isfile(fname):
@@ -495,13 +514,134 @@ if __name__ == '__main__':
                     translate = translate_temp_name, verbose=False)
             
         
-            zp_path, Fig = zeropoints.calc_zeropoints('{0}/training_subset1_calc_zp.{1}'.format(outdir, template),
+            zp_path, Fig, _, _ = zeropoints.calc_zeropoints('{0}/training_subset1_calc_zp.{1}'.format(outdir, template),
                                                       verbose=True)
-        
-        
-        
+            if pipe_params.do_zp_tests:
+                zp_paths = []
+                zp_with_z = []
+                zp_scatter_with_z = []
+
+                for iz, zl in enumerate(zbins[:-1]):
+                    print(iz+1)
+                    ezparam['CATALOG_FILE'] = '{0}/training_subset1_zs{1}.cat'.format(test_folder, iz)        
+                    ezparam['MAIN_OUTPUT_FILE'] = 'training_subset1_zs{1}_calc_zp.{0}'.format(template, iz)
+                    
+                    outdir = '{0}/testing/{1}'.format(pipe_params.working_folder, template)
+                    maybe_mkdir(outdir)
+
+                    ezparam['DUMP_TEMPLATE_CACHE'] = '1'
+                    cache_name = 'training_subset1_zs{1}_calc_zp.{0}.tempfilt'.format(template, iz)
+                    ezparam['CACHE_FILE'] = cache_name
+                            
+                    ezparam['OUTPUT_DIRECTORY'] = outdir
+                    ezparam['FIX_ZSPEC'] = '1'
+                    param_name = '{0}/training_subset1_zs{2}_calc_zp.{1}.param'.format(outdir, template, iz)
+                    ezparam.write(param_name)
+
+                
+                    runeazy(params = param_name, 
+                            translate = translate_temp_name, verbose=False)
+                
+            
+                    zp_path_s, Fig, zpz, zpz_sd = zeropoints.calc_zeropoints('{0}/training_subset1_zs{2}_calc_zp.{1}'.format(outdir, template, iz),
+                                                              verbose=True)
+                    plt.close(Fig)
+                    zp_paths.append(zp_path_s)
+                    zp_with_z.append(zpz)
+                    zp_scatter_with_z.append(zpz_sd)
+                    
+                    
+                zp_with_z = np.array(zp_with_z).T
+                zp_scatter_with_z = np.array(zp_scatter_with_z).T
+                
+                np.savez('{0}/zp_evolution_{1}.npz'.format(outdir, template), 
+                         zbins = zbins, zp = zp_with_z, zp_std = zp_scatter_with_z)
+            
+
             """
             Section 2b - Testing ZPs
+            
+            - Run once on test sample without zeropoint offsets
+            - Run again on test sample *with* zeropoint offsets
+            
+            """
+        
+            if pipe_params.do_zp_tests:
+                ### Without ZP Offsets ###
+                print('{0} ---No ZP--- {1}'.format('\n', '\n'))
+                ezparam['CATALOG_FILE'] = '{0}/training_subset1_zs5.cat'.format(test_folder)        
+                ezparam['MAIN_OUTPUT_FILE'] = 'training_subset1_zs5_no_zp.{0}'.format(template)
+                
+                outdir = '{0}/testing/{1}/no_zp'.format(pipe_params.working_folder, template)
+                maybe_mkdir(outdir)
+
+                ezparam['DUMP_TEMPLATE_CACHE'] = '1'
+                cache_name = 'training_subset1_zs5_no_zp.{0}.tempfilt'.format(template)
+                ezparam['CACHE_FILE'] = cache_name
+                        
+                ezparam['OUTPUT_DIRECTORY'] = outdir
+                ezparam['FIX_ZSPEC'] = '0'
+                ezparam['GET_ZP_OFFSETS'] = '0'
+                param_name = '{0}/training_subset1_zs5_no_zp.{1}.param'.format(outdir, template)
+                ezparam.write(param_name)
+
+                
+                runeazy(params = param_name, 
+                        translate = translate_temp_name, verbose=False)
+            
+                zout_no_zp = Table.read('{0}/training_subset1_zs5_no_zp.{1}.zout'.format(outdir, template),
+                                        format='ascii.commented_header')
+
+                ### With ZP Offsets ###
+                print('{0} ---With ZP--- {1}'.format('\n', '\n'))
+                ezparam['CATALOG_FILE'] = '{0}/training_subset1_zs5.cat'.format(test_folder)        
+                ezparam['MAIN_OUTPUT_FILE'] = 'training_subset1_zs5_with_zp.{0}'.format(template)
+                
+                outdir = '{0}/testing/{1}/with_zp'.format(pipe_params.working_folder, template)
+                maybe_mkdir(outdir)
+
+                ezparam['DUMP_TEMPLATE_CACHE'] = '1'
+                cache_name = 'training_subset1_zs5_with_zp.{0}.tempfilt'.format(template)
+                ezparam['CACHE_FILE'] = cache_name
+                        
+                ezparam['OUTPUT_DIRECTORY'] = outdir
+                ezparam['FIX_ZSPEC'] = '0'
+                ezparam['GET_ZP_OFFSETS'] = '1'
+                param_name = '{0}/training_subset1_zs5_with_zp.{1}.param'.format(outdir, template)
+                ezparam.write(param_name)
+
+                shutil.copy(zp_path, 'zphot.zeropoint')
+                shutil.copy(zp_path, '{0}/{1}.zphot.zeropoint'.format(pipe_params.working_folder, template))
+                
+                runeazy(params = param_name, 
+                        translate = translate_temp_name, zeropoints = 'zphot.zeropoint', verbose=False)
+            
+                zout_zp = Table.read('{0}/training_subset1_zs5_with_zp.{1}.zout'.format(outdir, template),
+                                     format='ascii.commented_header')    
+                
+                stats_no_zp = pdf_calibration.calcStats(zout_no_zp['z_peak'], zout_no_zp['z_spec'], verbose=False)
+                stats_zp = pdf_calibration.calcStats(zout_zp['z_peak'], zout_zp['z_spec'], verbose=False)
+                
+                stats_string = """
+                {0[0]:>12s} {0[1]:>10s} {0[2]:>10s}
+                {0[3]}                                  
+                {1[0]:>12s} {2[0]:>10.3f} {3[0]:>10.3f}
+                {1[1]:>12s} {2[1]:>10.3f} {3[1]:>10.3f}
+                {1[2]:>12s} {2[2]:>10.3f} {3[2]:>10.3f}
+                {1[3]:>12s} {2[3]:>10.3f} {3[3]:>10.3f}
+                {1[4]:>12s} {2[4]:>10.3f} {3[4]:>10.3f}
+                {1[5]:>12s} {2[5]:>10.3f} {3[5]:>10.3f}
+                {1[6]:>12s} {2[6]:>10.3f} {3[6]:>10.3f}
+                {1[7]:>12s} {2[7]:>10.3f} {3[7]:>10.3f}  
+                """.format(['Param', 'No ZP', 'With ZP', '-'*35],
+                           ['Sigma_all', 'Sigma_NMAD', 'Bias', 'OLF Def1', 'Sigma_OL1', 'OLF Def1', 'Sigma_OL1', 'KS'],
+                           stats_no_zp, 
+                           stats_zp)
+                print(stats_string)
+
+        
+            """
+            Section 2c - Testing ZPs for Average offsets
             
             - Run once on test sample without zeropoint offsets
             - Run again on test sample *with* zeropoint offsets
@@ -582,7 +722,7 @@ if __name__ == '__main__':
         
         
         """
-        Section 2c - Run ZP on full spectroscopic sample
+        Section 2d - Run ZP on full spectroscopic sample
         
         - Pass through to PDF/HB combination calibration
         

@@ -4,7 +4,7 @@ Main inputs:
 
 """
 working_folder = '/data2/ken/photoz/ezpipe-bootes'
-photometry_catalog = 'Bootes_merged_Icorr_2014a_all_ap4_mags.zs.fits'
+photometry_catalog = 'Bootes_merged_Icorr_2014a_all_ap3_mags.zs.fits'
 photometry_format = 'fits'
 
 filter_file = 'filter.bootes_mbrown_2014a.res'
@@ -12,13 +12,17 @@ translate_file = 'brown.zphot.2014.translate'
 
 zspec_col = 'z_spec'
 
+flux_col = 'flux'
+fluxerr_col ='fluxerr'
 
-do_zp = False
+do_zp = True
+do_zp_tests = True
 do_subcats = False
+
 do_full = False
 do_stellar = False
 do_hb = False
-do_merge = True
+do_merge = False
 
 """
 Training parameters
@@ -28,7 +32,7 @@ Ncrossval = 1
 test_fraction = 0.2
 
 process_outliers = True
-
+correct_extinction = True
 
 """
 Fitting Parameters
@@ -37,11 +41,14 @@ Fitting Parameters
 """
 
 # Templates: Any combination of 'eazy', 'swire', 'atlas'
-templates = ['eazy', 'atlas', 'cosmos']#, 'swire']#, 'cosmos', 'atlas'] #,'cosmos', 'atlas'] 
+templates = ['eazy', 'atlas', 'cosmos']#, 'swire']#, 'cosmos', 'atlas'] #,'cosmos', 'atlas']  
 fitting_mode = ['a', '1', '1']
+
 defaults = ['defaults/zphot.eazy',
             'defaults/zphot.atlas',
             'defaults/zphot.cosmos']
+            #'defaults/zphot.eazy',
+            #'defaults/zphot.atlas',
             #'defaults/zphot.swire']
 
 stellar_params = 'defaults/zphot.pickles'
@@ -62,7 +69,7 @@ fbad_prior = 'mag' # 'flat', 'vol' or 'mag'
 prior_parameter_path = 'bootes_I_prior_coeff.npz'
 prior_fname = 'I'
 prior_colname = 'I_mag'
-
+alpha_colname = 'I_mag'
 
 
 """

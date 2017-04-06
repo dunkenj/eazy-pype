@@ -202,7 +202,7 @@ if __name__ == '__main__':
         if (sbset == GAL).all():
             sbname = 'gal'
             start = np.array([0.3285, -0.1681, 0.02957, 0.829])
-            nskip = 17
+            nskip = 10
             
         else:
             sbname =  'agn'

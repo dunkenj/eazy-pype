@@ -550,7 +550,7 @@ if __name__ == "__main__":
             sbname =  'agn'
             alphas_init = [[5., 0.9], [5., 0.9], [5., 0.9]]
             fbad_max = 0.5
-            fbad_min = 0.3
+            fbad_min = 0.
             lzc = 0.0
             
         for itx, template in enumerate(pipe_params.templates):
@@ -819,7 +819,7 @@ if __name__ == "__main__":
         calcStats(alternate, zspec)
 
         catpath = '{0}/HB_{1}_calibration.cat'.format(folder, sbname)
-        hbcat.write(catpath, format='ascii.commented_header')
+        hbcat.write(catpath, format='ascii.commented_header', overwrite=True)
 
         """
         t_suffix = ['a', '1', '1']

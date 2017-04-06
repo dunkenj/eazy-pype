@@ -3,14 +3,31 @@ import array
 import os, sys
 import re
 
+import smpy.smpy as S
+from scipy.interpolate import CubicSpline
 
 from astropy.table import Table
 from astropy import units as u
 
+def f99_extinction(wave):
+    """
+    Return Fitzpatrick 99 galactic extinction curve as a function of wavelength
+    """
+    anchors_x = [0., 0.377, 0.820, 1.667, 1.828, 2.141, 2.433, 3.704, 3.846]
+    anchors_y = [0., 0.265, 0.829, 2.688, 3.055, 3.806, 4.315, 6.265, 6.591]
+    
+    f99 = CubicSpline(anchors_x, anchors_y)
+    
+    output_x = (1 / wave.to(u.micron)).value    
 
-def process(catalog_in, cat_format = 'ascii.commented_header',
+    return f99(output_x)
+
+
+def process(catalog_in, translate_file, filter_file,
+            cat_format = 'ascii.commented_header',
             id_col = 'id', flux_col = 'flux',
-            fluxerr_col = 'fluxerr', exclude_columns=None, 
+            fluxerr_col = 'fluxerr', exclude_columns=None,
+            correct_extinction=True,
             overwrite=True, verbose=False):
     
     input_data = Table.read(catalog_in, format=cat_format)
@@ -19,45 +36,82 @@ def process(catalog_in, cat_format = 'ascii.commented_header',
     column_names = input_data.columns.keys()
 
     ID = input_data[id_col]
-
-    filter_names = []
-    efilter_names = []
     
     flux_col_end = flux_col
     fluxerr_col_end = fluxerr_col
+    
+    try:
+        translate_init = Table.read(translate_file, format='ascii.no_header')
+        fnames = translate_init['col1']
+        fcodes = translate_init['col2']
+        flux_cols = np.array([a.startswith('F') for a in fcodes])
+        fluxerr_cols = np.array([a.startswith('E') for a in fcodes])
 
-    k,l = 0,0
-    for ii in range(len(column_names)):
-        if column_names[ii].lower().endswith(flux_col_end.lower()):
-            if k == 0:
-                fluxes = input_data[column_names[ii]].data
-            else:
-                fluxes = np.column_stack((fluxes,input_data[column_names[ii]].data))
-            k+=1
-            filter_names.append(column_names[ii])
+    except:
+        raise
+    
+        # Parse filter file with smpy - get central wavelengths back
+    filt_obj = S.LoadEAZYFilters(filter_file)
+        
+    lambda_cs = np.zeros(flux_cols.sum())
+    f99_means = np.zeros(flux_cols.sum())
+    
+    for il, line in enumerate(translate_init[flux_cols]):
+        filtnum = int(line['col2'][1:])-1
+        lambda_cs[il] = filt_obj.filters[filtnum].lambda_c.value
 
-        if column_names[ii].lower().endswith(fluxerr_col_end.lower()):
-            if l == 0:
-                fluxerrs = input_data[column_names[ii]].data
-            else:
-                fluxerrs = np.column_stack((fluxerrs,input_data[column_names[ii]].data))
-            l+=1
-            efilter_names.append(column_names[ii])
+        wave = filt_obj.filters[filtnum].wave
+        resp = filt_obj.filters[filtnum].response
 
+        f99_ext = f99_extinction(wave)
+        f99_means[il] = np.trapz(resp*f99_ext, wave.value) / np.trapz(resp, wave.value)
+
+
+    wl_order = np.argsort(lambda_cs)
+
+    flux_colnames_ordered = fnames[flux_cols][wl_order]
+    fluxerr_colnames_ordered = fnames[fluxerr_cols][wl_order]
+    
+
+    f99_means_ordered = f99_means[wl_order]
+    
+    fluxes = np.zeros((len(input_data), len(flux_colnames_ordered)))    
+    fluxerrs = np.zeros((len(input_data), len(flux_colnames_ordered)))
+    
+    for i in range(len(flux_colnames_ordered)):        
+        if correct_extinction:
+            try:
+                extinctions = f99_means_ordered[i]*input_data['EBV']
+                flux_correction = 10**(extinctions/2.5)
+                
+                isgood = (input_data[fluxerr_colnames_ordered[i]] > 0.)
+
+                input_data[flux_colnames_ordered[i]][isgood] *= flux_correction[isgood]
+                input_data[flux_colnames_ordered[i][:-4]+'mag'][isgood] -= extinctions[isgood]
+                
+            except:
+                raise
+                
+        fluxes[:,i] = input_data[flux_colnames_ordered[i]]
+        fluxerrs[:,i] = input_data[fluxerr_colnames_ordered[i]]
+    
+    
     fluxes = fluxes[:,1:-1]
     fluxerrs = fluxerrs[:,1:-1]
-    fnames_full = filter_names[1:-1]
-    efnames_full = efilter_names[1:-1]
+    fnames_full = flux_colnames_ordered[1:-1]
+    efnames_full = fluxerr_colnames_ordered[1:-1]
     fnames = [filt.split('_')[0] for filt in fnames_full]
 
     color_a = np.zeros(fluxes.shape)
     color_b = np.zeros(fluxes.shape)
 
     upper_lims = np.where(np.logical_and(fluxes/fluxerrs < 2., fluxerrs > 0.))
-    fluxes[upper_lims] = fluxes[upper_lims] + 2.*fluxerrs[upper_lims]
+    fluxes[upper_lims] = -99.
+    #np.maximum(fluxes[upper_lims], 0) + 2.*fluxerrs[upper_lims]
 
     color_a[:,1:] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
     color_b[:,:-1] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
+
 
     # Identify anomalous datapoints by extreme red/blue colours
     # Or strong jumps in colour
@@ -75,14 +129,6 @@ def process(catalog_in, cat_format = 'ascii.commented_header',
     fraction_bad = (good*anomalous).sum(0).astype('float') / good.sum(0)
     gg = zip(fnames, fraction_bad*100)
 
-    """
-    mask = anomalous[:,4] * input_data['FLAG_DEEP'].astype('bool')
-    plt.plot(input_data['ALPHA_J2000'][mask], input_data['DELTA_J2000'][mask], 'o', alpha=0.1, mew=0)
-
-    mask = anomalous[:,9] * input_data['FLAG_DEEP'].astype('bool')
-    plt.plot(input_data['ALPHA_J2000'][mask], input_data['DELTA_J2000'][mask], 'o', alpha=0.1, mew=0)
-
-    """
 
     for i, name in enumerate(fnames_full):
         if verbose:
@@ -96,13 +142,37 @@ def process(catalog_in, cat_format = 'ascii.commented_header',
         os.remove(outname)
 
     input_data.write(outname, format=cat_format)
+    
     return outname, gg
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p","--params", type=str,
+                        help = "Parameter file")
+    parser.add_argument("-q", "--quiet", help = "Suppress extra outputs",
+                        action = "store_true")
+    args = parser.parse_args()
+    quiet = args.quiet
 
-    catalog_in = '/data2/ken/photoz/ezpipe-test/Bootes_merged_Icorr_2014a_all_ap4_mags.testsample.cat'
-    exclude_columns = ['Total_flux', 'E_Total_flux']
+    params_root = re.split(".py", args.params)[0]
+    if os.path.isfile(params_root+".pyc"):
+        os.remove(params_root+".pyc")
+
+    import importlib
+    try:
+        pipe_params = importlib.import_module(params_root)
+        print('Successfully loaded "{0}" as params'.format(args.params))
+        reload(pipe_params)
+    except:
+        print('Failed to load "{0}" as params'.format(args.params))
+        raise
+
+
+    catalog_in = '/data2/ken/photoz/ezpipe-bootes/Bootes_merged_Icorr_2014a_all_ap4_mags.zs.fits'
     
-    frac_removed = process(catalog_in, cat_format='ascii.commented_header', exclude_columns=exclude_columns)
+    outname, bf, f, fe = process(catalog_in, '{0}/{1}'.format(pipe_params.working_folder, pipe_params.translate_file),
+                                '{0}/{1}'.format(pipe_params.working_folder, pipe_params.filter_file),
+                                cat_format='fits')
 
 

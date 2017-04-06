@@ -1,99 +1,34 @@
 /home/duncan/.local/lib/python2.7/site-packages/sklearn/cross_validation.py:44: DeprecationWarning: This module was deprecated in version 0.18 in favor of the model_selection module into which all the refactored classes and functions are moved. Also note that the interface of the new CV iterators are different from that of this module. This module will be removed in 0.20.
   "This module will be removed in 0.20.", DeprecationWarning)
-/software/local/lib64/python2.7/site-packages/numpy/ma/core.py:852: RuntimeWarning: invalid value encountered in greater_equal
-  return umath.absolute(a) * self.tolerance >= umath.absolute(b)
-/data2/ken/photoz/eazy-pype/validation.py:56: RuntimeWarning: invalid value encountered in less
+/data2/ken/photoz/eazy-pype/validation.py:87: RuntimeWarning: invalid value encountered in greater
+  isgood = (input_data[fluxerr_colnames_ordered[i]] > 0.)
+/data2/ken/photoz/eazy-pype/validation.py:108: RuntimeWarning: invalid value encountered in less
   upper_lims = np.where(np.logical_and(fluxes/fluxerrs < 2., fluxerrs > 0.))
-/data2/ken/photoz/eazy-pype/validation.py:56: RuntimeWarning: invalid value encountered in greater
+/data2/ken/photoz/eazy-pype/validation.py:108: RuntimeWarning: invalid value encountered in greater
   upper_lims = np.where(np.logical_and(fluxes/fluxerrs < 2., fluxerrs > 0.))
-/data2/ken/photoz/eazy-pype/validation.py:59: RuntimeWarning: divide by zero encountered in log10
+/data2/ken/photoz/eazy-pype/validation.py:112: RuntimeWarning: invalid value encountered in log10
   color_a[:,1:] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
-/data2/ken/photoz/eazy-pype/validation.py:59: RuntimeWarning: invalid value encountered in log10
-  color_a[:,1:] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
-/data2/ken/photoz/eazy-pype/validation.py:60: RuntimeWarning: divide by zero encountered in log10
+/data2/ken/photoz/eazy-pype/validation.py:113: RuntimeWarning: invalid value encountered in log10
   color_b[:,:-1] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
-/data2/ken/photoz/eazy-pype/validation.py:60: RuntimeWarning: invalid value encountered in log10
-  color_b[:,:-1] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
-/data2/ken/photoz/eazy-pype/validation.py:74: RuntimeWarning: invalid value encountered in greater
+/data2/ken/photoz/eazy-pype/validation.py:119: RuntimeWarning: invalid value encountered in less
+  drop = np.logical_and(color_a < -1., color_b > 1.)
+/data2/ken/photoz/eazy-pype/validation.py:119: RuntimeWarning: invalid value encountered in greater
+  drop = np.logical_and(color_a < -1., color_b > 1.)
+/data2/ken/photoz/eazy-pype/validation.py:120: RuntimeWarning: invalid value encountered in greater
+  spike = np.logical_and(color_a > 2.5, color_b < -2.5)
+/data2/ken/photoz/eazy-pype/validation.py:120: RuntimeWarning: invalid value encountered in less
+  spike = np.logical_and(color_a > 2.5, color_b < -2.5)
+/data2/ken/photoz/eazy-pype/validation.py:123: RuntimeWarning: invalid value encountered in less
+  criteria2 = np.logical_or(color_a < -5, color_b > 5)
+/data2/ken/photoz/eazy-pype/validation.py:123: RuntimeWarning: invalid value encountered in greater
+  criteria2 = np.logical_or(color_a < -5, color_b > 5)
+/data2/ken/photoz/eazy-pype/validation.py:128: RuntimeWarning: invalid value encountered in greater
   good = (fluxerrs > 0)
 WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/cosmos.translate.opt already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-/data2/ken/photoz/eazy-pype/hbcombination.py:148: RuntimeWarning: invalid value encountered in divide
-  pz /= norm[:, None]
-/data2/ken/photoz/eazy-pype/hbcombination.py:491: RuntimeWarning: divide by zero encountered in log
-  pzarr_fbad[:, :, f] = np.exp(np.sum(np.log(pzb)/beta, axis=0))
-/data2/ken/photoz/eazy-pype/hbcombination.py:352: RuntimeWarning: invalid value encountered in double_scalars
-  zmz = np.trapz(pz_to_int[lo:up]*zgrid[lo:up], zgrid[lo:up]) / area
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/1/HB.1.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/2/HB.2.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/3/HB.3.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/4/HB.4.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/5/HB.5.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/6/HB.6.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-/data2/ken/photoz/eazy-pype/hbcombination.py:385: RuntimeWarning: invalid value encountered in double_scalars
-  zmz = np.trapz(pz_to_int[0:up]*zgrid[0:up], zgrid[0:up]) / area
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/7/HB.7.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/8/HB.8.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/9/HB.9.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/10/HB.10.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/11/HB.11.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/12/HB.12.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/13/HB.13.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/14/HB.14.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/15/HB.15.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/16/HB.16.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/17/HB.17.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/18/HB.18.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/19/HB.19.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/20/HB.20.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/21/HB.21.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/22/HB.22.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/23/HB.23.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/24/HB.24.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/25/HB.25.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/26/HB.26.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-/data2/ken/photoz/eazy-pype/hbcombination.py:148: RuntimeWarning: divide by zero encountered in divide
-  pz /= norm[:, None]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/27/HB.27.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/28/HB.28.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/29/HB.29.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/30/HB.30.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/31/HB.31.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/32/HB.32.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/33/HB.33.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/34/HB.34.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/35/HB.35.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/36/HB.36.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/37/HB.37.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/38/HB.38.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/39/HB.39.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/40/HB.40.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/41/HB.41.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/42/HB.42.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/43/HB.43.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/44/HB.44.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/45/HB.45.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/46/HB.46.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/47/HB.47.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/48/HB.48.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/49/HB.49.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/50/HB.50.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/51/HB.51.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/52/HB.52.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/53/HB.53.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/54/HB.54.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/55/HB.55.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/56/HB.56.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/57/HB.57.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/58/HB.58.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/59/HB.59.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/60/HB.60.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/61/HB.61.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/62/HB.62.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/63/HB.63.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/64/HB.64.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/65/HB.65.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/66/HB.66.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/67/HB.67.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/68/HB.68.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/69/HB.69.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/full/70/HB.70.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs0.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs1.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs2.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs3.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs4.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs5.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs6.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]

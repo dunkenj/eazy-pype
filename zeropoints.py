@@ -274,49 +274,63 @@ def calc_zeropoints(base, verbose=False):
     Fig, Ax = plt.subplots(5, int(Nfilts/5)-1, sharex=True, figsize = (12.*golden, 10))
 
     for i, ax in enumerate(Ax.flatten()[:fnu.shape[1]]):
-        cut = ((fnu > 5*efnu) * (efnu > 0.))[:,i]
+        cut = ((fnu > 3*efnu) * (efnu > 0.) * (fnu < 100.))[:,i]
         ratio = (fit_seds[cut,i]-fnu[cut,i])/fit_seds[cut,i] + 1
         
         
         #ratio = (fit_seds[cut,i]-fnu[cut,i])/efnu[cut,i]
-        
-        medians[i] = np.nanmedian(ratio)
-        bootresult = bootstrap(ratio, 100, 
-                               samples=int(0.1*len(ratio)), 
-                               bootfunc=np.nanmedian)
-        scatter[i] = np.std(bootresult)
-        
-        if verbose:
-            print ('{0}: {1:.3f} +/- {2:.3f}'.format(fnames[i], medians[i], scatter[i]))
-        
-        hist, bins, ob = ax.hist(ratio, bins=101, range=(0.,2.), 
-                                 histtype='stepfilled', normed=True)
-        
-        ax.text(1.5,1,'{0:.3f}'.format(medians[i]),size=10,
-                bbox=dict(boxstyle="round", fc="w", alpha=0.7, lw=0.))
+        c = np.invert(np.isnan(ratio))
+        ratio = ratio[c]
 
-        ax.set_xlim([0,2])
-        ax.set_ylim([0,np.max(hist)*1.33])
-        #ax.set_yscale('log')
+        if np.sum(c) > 10:
+            medians[i] = np.nanmedian(ratio)
+            bootresult = bootstrap(ratio, 100, 
+                                   samples=np.maximum(len(ratio)-1, int(0.1*len(ratio))), 
+                                   bootfunc=np.nanmedian)
+            scatter[i] = np.std(bootresult)
+        
+        
+            hist, bins, ob = ax.hist(ratio, bins=101, range=(0.,2.), 
+                                     histtype='stepfilled', normed=True)
+            
+            ax.text(1.5,1,'{0:.3f}'.format(medians[i]),size=10,
+                    bbox=dict(boxstyle="round", fc="w", alpha=0.7, lw=0.))
+
+            ax.set_xlim([0,2])
+            ax.set_ylim([0,np.max(hist)*1.33])
+            #ax.set_yscale('log')
+
+        else:
+            medians[i] = -99.
+            scatter[i] = -99.
+
         if i % 9 == 0:
             ax.set_ylabel('Normalised counts')
         ax.set_xlabel(r'$F_{\rm{fit}}/F_{\rm{obs}}$')
+            
         #ax.set_xticks([0.,0.5,1.,1.5])
         ax.set_title(fnames[i],x=0.5,y=0.8,size=9,
                      bbox=dict(boxstyle="round", fc="w", alpha=0.7, lw=0.))
 
+
+        if verbose:
+            print ('{0}: {1:.3f} +/- {2:.3f}'.format(fnames[i], medians[i], scatter[i]))
+
     Fig.subplots_adjust(left=0.05,right=0.98,bottom=0.065,top=0.98,wspace=0,hspace=0)
     #plt.show()
-
+    
+    c = np.isnan(medians)
+    medians[c] = 99.
+    scatter[c] = 99.
 
     output_path = base+'.zeropoint'
 
     with open(output_path,'w') as file:
         for i, med in enumerate(medians):
-            if (np.abs(med-1) > 2.*scatter[i]):
+            if (np.abs(med-1) > 2.*np.abs(scatter[i])):
                 file.write('{0}    {1:.3f} {2}'.format(eazy_fno[i], med, '\n'))
 
-    return output_path, Fig
+    return output_path, Fig, medians, scatter
 
 if __name__ == "__main__":
     print('TESTS')
