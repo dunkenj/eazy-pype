@@ -55,18 +55,18 @@ def save_gp(path, gp, bands, alpha_values, scale_band):
            'bands': bands,
            'alpha': alpha_values,
             'scale_band': scale_band}
-    
+
     pickle.dump(file=open(path, "wb"), obj=out)
-    
+
 def load_gp(path):
     out = pickle.load(open(path, "rb"))
-    
+
     gp = out['gp']
     bands = out['bands']
     alpha_values = out['alpha']
     try:
         scale_band = out['scale_band']
-        return gp, bands, alpha_values, scale_band    
+        return gp, bands, alpha_values, scale_band
     except:
         return gp, bands, alpha_values
 
@@ -264,22 +264,6 @@ def calcStats(photoz, specz):
 
     return ol1_s, ol2_s, np.nanmedian(dz[ol1_s]/(1+specz[ol1_s]))
 
-def doplot(gal):
-    Fig, Ax = plt.subplots(1, figsize=(5.5,3.5))
-
-    rand = np.random.randint(pzarr.shape[0])
-
-    Ax.plot(zgrid, pzarr[0, gal], '--', lw=1)
-    Ax.plot(zgrid, pzarr[1, gal], '--', lw=1)
-    Ax.plot(zgrid, pzarr[2, gal], '--', lw=1)
-
-    Ax.plot(zgrid, pzarr_hb[gal], lw=2, color='k')
-
-    Ax.plot(np.ones((2))*photom['z_spec'][gal], [0, Ax.get_ylim()[1]], color='0.5')
-    Ax.set_xlim([0, 9.])
-
-    plt.show()
-
 
 def lnprior(mags, theta):
     intcp, slope = theta
@@ -303,7 +287,7 @@ def lnprob(theta, mags, pz, zgrid, zspec):
 
 def lnlikep(theta, mags, pz, pzprior, zgrid, zspec):
     intcp, slope = theta
-    ci, bins = pdf.calc_ci_dist(pz**(1/alphas_mag(mags, intcp, slope)[:, None]) * pzprior, 
+    ci, bins = pdf.calc_ci_dist(pz**(1/alphas_mag(mags, intcp, slope)[:, None]) * pzprior,
                                 zgrid, zspec)
     ci_dist = -1*np.log((ci[:80]-bins[:80])**2).sum()
     return ci_dist
@@ -356,7 +340,7 @@ def fitalphasp(mags, pz, pzprior, zgrid, zspec, alpha_start,
 
     f = open('achain.dat', 'w')
     f.close()
-    
+
     with ProgressBar(nsamples) as bar:
         for result in sampler.sample(pos, iterations=nsamples, storechain=True):
             position = result[0]
@@ -364,7 +348,7 @@ def fitalphasp(mags, pz, pzprior, zgrid, zspec, alpha_start,
             for k in range(position.shape[0]):
                 f.write("{0:4d} {1}\n".format(k, " ".join(np.array(position[k]).astype('str'))))
             bar.update()
-                    
+
         #sampler.run_mcmc(pos, nsamples, rstate0=np.random.get_state())
         print("Done.")
 
@@ -691,7 +675,7 @@ if __name__ == "__main__":
             basename='training_all_with_zp.{0}'.format(template)
             pz, zgrid = getPz('{0}/{1}'.format(folder, basename))
             catalog = Table.read('{0}/{1}.zout'.format(folder, basename), format='ascii.commented_header')
-            
+
             check_id = np.array([i in catalog['id'] for i in photom['id']])
             photom = photom[check_id]
             GAL = GAL[check_id]
@@ -719,27 +703,27 @@ if __name__ == "__main__":
                 else:
                     pzprior = np.ones_like(pz)
 
-            
+
             mcut = (photom[pipe_params.prior_colname] > 0.) * (catalog_all[0]['nfilt'] > 0)
             pz = pz[sbset*mcut]
             catalog = catalog[sbset*mcut]
-            
+
             magsc = photom[pipe_params.prior_colname][sbset*mcut]
             edges = [16, 17, 18, 19, 20, 21, 22]
 
             for ie in np.arange(len(edges)-1):
                 mslice = np.logical_and(magsc > edges[ie], magsc < edges[ie+1])
                 idslice = np.where(mslice)[0]
-                
-            
+
+
                 cut = ShuffleSplit(len(idslice), 1, train_size=np.minimum(len(idslice), 3000)-1, test_size=1)
                 for i, (sb, sbb) in enumerate(cut):
                     if ie == 0:
                         idsubset = idslice[sb]
                     else:
                         idsubset = np.append(idsubset, idslice[sb])
-            
-        
+
+
 
 
             """ Split and Do Training """
@@ -764,8 +748,8 @@ if __name__ == "__main__":
 
 
             print('Doing fits...')
-            sampler, imed, smed = fitalphasp(mags, pz_train, 
-                                            pzprior[sbset*mcut][idsubset][train_index], 
+            sampler, imed, smed = fitalphasp(mags, pz_train,
+                                            pzprior[sbset*mcut][idsubset][train_index],
                                             zgrid, zspec_train, alphas_init[itx],
                                             nwalkers=20, nsamples=1000, fburnin=0.2, nthreads = pipe_params.ncpus)
 
@@ -779,7 +763,7 @@ if __name__ == "__main__":
             print('{0} {1}'.format(ibest, sbest))
             alphas_fitted.append([ibest, sbest])
 
-            alphas_best = alphas_mag(photom[mag_col][sbset*mcut][idsubset][train_index], 
+            alphas_best = alphas_mag(photom[mag_col][sbset*mcut][idsubset][train_index],
                                      imed, smed)[:, None]
             pz_mod = pz_train**(1/(alphas_best)) * pzprior[sbset*mcut][idsubset][train_index]
             za_mod_train = zgrid[np.argmax(pz_mod, axis=1)]
@@ -803,8 +787,8 @@ if __name__ == "__main__":
             zgrid, zspec_test)
 
             pz_mod_test = (pz_test**(1./alphas_mag(photom[mag_col][sbset*mcut][idsubset][test_index], ibest, sbest)[:, None]) * pzprior[sbset*mcut][idsubset][test_index])
-            za_mod_test = zgrid[np.argmax(pz_mod_test, axis=1)] 
-                      
+            za_mod_test = zgrid[np.argmax(pz_mod_test, axis=1)]
+
             ol1, ol2, bias = calcStats(za_mod_test, zspec_test)
             ci_test_mod2, bins = pdf.calc_ci_dist(pz_mod_test, zgrid, zspec_test)
 
@@ -874,19 +858,19 @@ if __name__ == "__main__":
         #pzarr = np.array(pzarr)
 
         pz_back = np.copy(pzarr)
-        
+
 
         pzarr = list(pzarr)
         if pipe_params.gpz:
-        
+
             sets = []
             bands = []
             alphas = []
             gpz = []
             scale_bands = []
-                    
+
             AGN = (photom['AGN'][sbset*mcut] == 1)
-            
+
             if pipe_params.ir_gpz_path != None:
                 IRAGN = (photom['IRClass'][sbset*mcut] >= 4)
                 gp_ir, bands_ir, alpha_values_ir = load_gp('{0}'.format(pipe_params.ir_gpz_path))
@@ -895,33 +879,33 @@ if __name__ == "__main__":
                 bands.append(bands_ir)
                 alphas.append(alpha_values_ir)
                 gpz.append(gp_ir)
-                
-            if pipe_params.xray_gpz_path != None:          
+
+            if pipe_params.xray_gpz_path != None:
                 XR = (photom['XrayClass'][sbset*mcut] == 1)
                 gp_xray, bands_xray, alpha_values_xray = load_gp('{0}'.format(pipe_params.xray_gpz_path))
-    
+
                 sets.append(XR)
                 bands.append(bands_xray)
                 alphas.append(alpha_values_xray)
                 gpz.append(gp_xray)
-    
+
             if pipe_params.opt_gpz_path != None:
                 try:
                     OPT = (photom['mqcAGN'][sbset*mcut] == 'True')
                 except:
                     OPT = AGN
-                    
+
                 gp_opt, bands_opt, alpha_values_opt, sc = load_gp('{0}'.format(pipe_params.opt_gpz_path))
- 
+
                 sets.append(OPT)
                 bands.append(bands_opt)
                 alphas.append(alpha_values_opt)
-                gpz.append(gp_opt)   
+                gpz.append(gp_opt)
                 scale_bands.append(sc)
-    
+
             GAL = np.invert(AGN)
-          
-            
+
+
             if pipe_params.gal_gpz_paths != None:
                 for path in pipe_params.gal_gpz_paths:
                     try:
@@ -929,7 +913,7 @@ if __name__ == "__main__":
                         scale_bands.append(sc)
                     except:
                         g, b, a = load_gp('{0}'.format(path))
-                                
+
                     sets.append(GAL)
                     bands.append(b)
                     alphas.append(a)
@@ -962,7 +946,7 @@ if __name__ == "__main__":
                 pzarr.append(pz)
 
         pzarr = np.array(pzarr)
-        
+
         """
         Define or Calculate U(z) - P(z) in case of bad fit:
 
@@ -1001,7 +985,7 @@ if __name__ == "__main__":
         pzbad_mag = np.copy(pzbad)
 
         #pzbad = pzbad[ca]
-        
+
         rs = ShuffleSplit(len(catalog), 1, test_size = 0.9)
         for i, (train_index, test_index) in enumerate(rs):
             pz_train = pz[train_index]
@@ -1027,9 +1011,6 @@ if __name__ == "__main__":
         print(beta_best)
 
         pzarr_hb = HBpz(pzarr[:], zgrid, pzbad, beta=beta_best, fbad_max = fbad_max, fbad_min=fbad_min)
-
-
-        np.savez('temp_bak.npz', pzarr = pzarr, pzarr_hb = pzarr_hb)
 
         """
         Verify Stats are Improved as Expected
@@ -1061,7 +1042,7 @@ if __name__ == "__main__":
         folder = '{0}/testing/all_specz'.format(pipe_params.working_folder)
         path = '{0}/HB_hyperparameters_{1}_{2}.npz'.format(folder, sbname, pipe_params.prior_fname)
         np.savez(path, alphas = alphas_fitted, beta = beta_best)
-        
+
         """
         Plots and Statistics for HB
         """
