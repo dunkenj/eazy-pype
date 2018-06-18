@@ -3,6 +3,7 @@ Main inputs:
 (Change for all fields)
 
 """
+eazypath = '/data2/ken/photoz/eazy-photoz/src/eazy'
 working_folder = '/data2/ken/photoz/ezpipe-bootes'
 photometry_catalog = 'Bootes_merged_Icorr_2014a_all_ap3_mags.zs.fits'
 photometry_format = 'fits'

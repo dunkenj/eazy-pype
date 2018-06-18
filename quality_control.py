@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import cKDTree
 from scipy.interpolate import griddata
 from scipy.stats import ks_2samp
-from astropy.stats import bootstrap
+from astropy.stats import bootstrap, bayesian_blocks
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 
@@ -30,7 +30,7 @@ quiet = args.quiet
 
 
 def calcStats(photoz, specz, verbose=False):
-    cut = np.logical_and(specz > 0., photoz >= 0.)
+    cut = np.logical_and(specz >= 0., photoz >= 0.)
     photoz = photoz[cut]
     specz = specz[cut]
     
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     folder = '{0}/full'.format(pipe_params.working_folder)
     zout = Table.read('{0}/photoz_all_merged.fits'.format(folder), format='fits')
     
-    AGN = np.logical_or(photometry['XrayAGN'] == 1, photometry['IRAGN'] > 0.)
+    AGN = (photometry['AGN'] == 1)
     GAL = np.invert(AGN)
     
     """
@@ -103,16 +103,19 @@ if __name__ == "__main__":
     star = (chi_best > zout['chi_r_stellar']).astype('int')
     #qc = (zout['z1_max']-zout['z1_min']/(1+zout['z1_median']) < 0.5)
     #qc = (chi_best < 4.) #np.percentile(chi_best[AGN], 95))
-    """
+    
 
-    for sbset in [GAL, AGN]:
+    for sbset in [GAL]:
 
         if (sbset == GAL).all():
-            zsbins = np.insert(np.linspace(0.0, 1.5, 7), 1, 0.01)
-            zsbins= np.append(zsbins, np.linspace(2., 6., 4))
+            #zsb_l = np.linspace(0, np.log10(1+zspec.max()), 7)
+            #zsbins = (10**zsb_l) - 1
+            #zsbins = np.linspace(0.0, 1.5, 7)
+            #zsbins= np.append(zsbins, np.linspace(2., 3., 2.))
             sbset_name = 'gal'
         else:
-            zsbins = np.insert(np.linspace(0, 5, 6), 1, 0.5)
+
+            #zsbins = np.insert(np.linspace(0, 5, 6), 1, 0.5)
             sbset_name = 'agn'
             
         photometry_qc_cuts = np.invert(star) #based on star classification
@@ -130,20 +133,27 @@ if __name__ == "__main__":
         #zsbins = 10**(np.linspace(0.05, 0.90309, 15)) - 1
 
 
-        cc = zs_sample_idx.data * (zout['z1_median'] >= 0.) * sbset
+        cc = zs_sample_idx * (zout['z1_median'] >= 0.) * sbset
 
         stats = []
         
         zz = zout[cc]
         zspec = z_spec_all[cc]
+
+        zsb_l = np.linspace(0, np.log10(1+zspec.max()), 1.5)
+        zsbins = (10**zsb_l) - 1
+        
+        #zsbins = bayesian_blocks(zspec)
+        #zsbins = (10**zsb_l) - 1
+
+
         
         zmids = 0.5*(zsbins[:-1]+zsbins[1:])
         
         for iz, zmin in enumerate(zsbins[:-1]):
-            
             zmax = zsbins[iz+1]
             
-            zcut = np.logical_and(zspec > zmin, zspec < zmax)
+            zcut = np.logical_and(zspec >= zmin, zspec < zmax)
             print(zcut.sum())
             
             
@@ -204,7 +214,7 @@ if __name__ == "__main__":
             #Ax[j].set_yscale('log')
             #Ax[j].set_ylim([0.01, 1.])
         
-        Leg = Ax[-1].legend(loc='upper left', ncol=2)
+        Leg = Ax[-1].legend(loc='upper left', ncol=2, prop={'size':9})
         Leg.draw_frame(False)
         Fig.subplots_adjust(right=0.95, top=0.95, wspace=0.22, hspace=0.)
         Fig.tight_layout()
@@ -212,7 +222,7 @@ if __name__ == "__main__":
                     bbox_inches='tight')
         plt.show()
         
-    """
+  
 
 
     """
@@ -250,6 +260,7 @@ if __name__ == "__main__":
         
         return histp, z1, z2, dr
 
+    """
     zsets = ['zpeak_eazy', 'zpeak_atlas', 'zpeak_cosmos', 'z1_median', 'za_hb']
     names = ['EAZY', 'Atlas', 'XMM-COSMOS', 'HB Median', 'HB Peak']
     
@@ -296,15 +307,15 @@ if __name__ == "__main__":
 
             dist = (20*u.arcsec).to(u.deg).value
             mindist = (2*u.arcsec).to(u.deg).value
-            """
-            Steps:
+            
+            #Steps:
 
-            1. Get zdist for real pairs
-            2. For N iterations:
-                a) Randomise positions
-                b) Get zdist for real pairs
+            #1. Get zdist for real pairs
+            #2. For N iterations:
+            #    a) Randomise positions
+            #    b) Get zdist for real pairs
 
-            """
+
 
             z = zout[zset][cut] + 0.01*(np.random.rand(len(coords)) - 0.5)
 
@@ -391,7 +402,7 @@ if __name__ == "__main__":
 
     #pair_scatter.write('pair_scatter_data_ol.cat',format='ascii.commented_header')
 
-    """
+
     Fig, Ax = plt.subplots(1, figsize=(5.5,5))
     #Ax.bar(histp[1][:-1], diff, np.diff(histp[1]), color='0.7',linewidth=0)
     Ax.plot(bins, diff, 'o--', color='0.5', mew=0)
@@ -409,7 +420,7 @@ if __name__ == "__main__":
     Fig.subplots_adjust(bottom=0.15, left=0.12, top=0.95, right=0.95)
     #Fig.savefig('pairs_error_example_HB_21.5.pdf', format='pdf', bbox_inches='tight')
     plt.show()
-    """
+
 
     Fig, Ax = plt.subplots(1, figsize=(6.5,4))
     
@@ -542,7 +553,7 @@ if __name__ == "__main__":
 
     plt.show()
 
-
+    """
 
 
 

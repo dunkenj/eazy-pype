@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from astropy.visualization import MinMaxInterval
 
+from sklearn.cross_validation import ShuffleSplit
+
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-p","--params", type=str,
@@ -72,7 +74,7 @@ def pzl(z, m0, z0t, kmt1, kmt2, alpha, lzc):
 
 def pzv(z, m0, z0t, kmt1, kmt2, alpha):
     m0 = np.array(m0, ndmin=1)
-    zmt = np.maximum(1e-10, z0t + kmt1*(m0-14.) + kmt2*((m0-14.)**2))
+    zmt = np.maximum(0.03, z0t + kmt1*(m0-14.) + kmt2*((m0-14.)**2))
     vol = cosmo.differential_comoving_volume(z).value / 39467332216.008575
     #vol = z**alpha
     cutoff = np.exp(-1*((z / zmt)**alpha))
@@ -90,14 +92,14 @@ def pzv(z, m0, z0t, kmt1, kmt2, alpha):
 def lnprior(theta, m):
     z0t, kmt1, kmt2, alpha1 = theta
 
-    if -0.2 < z0t < 1. and -0.5 < kmt1 < 0.5 and -0.5 < kmt2 < 0.5 and -3. < alpha1 < 3.0:
+    if 0. < z0t < 1. and -0.5 < kmt1 < 0.5 and -0.5 < kmt2 < 0.5 and -3. < alpha1 < 3.0:
         return 0.0
     return -np.inf
 
 def lnlike(theta, z, m):
     z0t, kmt1, kmt2, alpha1 = theta
     model = pzv(z, m, z0t, kmt1, kmt2, alpha1)
-    like = np.nansum(np.log(model))
+    like = np.sum(np.log(model))
     if not np.isfinite(like):
         return -np.inf
     
@@ -110,7 +112,7 @@ def lnprob(theta, z, m):
     return lp + lnlike(theta, z, m)
 
 def fitpriors(data, mag_col, z_col, start,
-              nwalkers=20, nsamples=5000, fburnin=0.2, nthreads = 4, nskip=10):
+              nwalkers=20, nsamples=5000, fburnin=0.2, nthreads = 5, nskip=10):
     """ Fit prior functional form to observed dataset with emcee
     
     """
@@ -120,12 +122,26 @@ def fitpriors(data, mag_col, z_col, start,
     #data = Table.read(catalog_path, format=catalog_format)
 
     cut = (data[z_col] > 0.001)*(data[mag_col] > 14.) # Cut -99s etc
-    data = data[cut][::nskip]
+    data = data[cut]
 
     zdata = data[z_col].data
     mdata = data[mag_col].data
 
+    edges = np.arange(np.floor(np.percentile(mdata,1)), np.ceil(np.percentile(mdata,99)), 1)
     
+    for ie in np.arange(len(edges)-1):
+        mslice = np.logical_and(mdata > edges[ie], mdata < edges[ie+1])
+        idslice = np.where(mslice)[0]
+    
+        cut = ShuffleSplit(len(idslice), 1, train_size=np.minimum(len(idslice), 1000)-1, test_size=1)
+        for i, (sb, sbb) in enumerate(cut):
+            if ie == 0:
+                idsubset = idslice[sb]
+            else:
+                idsubset = np.append(idsubset, idslice[sb])
+    
+    zdata = zdata[idsubset]
+    mdata = mdata[idsubset]
     
     # Set up the sampler.
     pos = [start + 0.1*np.random.randn(ndim)*np.abs(start) for i in range(nwalkers)]
@@ -194,22 +210,25 @@ if __name__ == '__main__':
                         format='ascii.commented_header')    
 
 
+    cut = (photom[pipe_params.prior_colname] > 0.)  * (photom['z_spec'] > 0.)
+    photom = photom[cut]
+
     AGN = (photom['AGN'] == 1)
     GAL = np.invert(AGN)
     
-    for ixs, sbset in enumerate([AGN, GAL]):
+    for ixs, sbset in enumerate([AGN]):
     
         if (sbset == GAL).all():
             sbname = 'gal'
-            start = np.array([0.3285, -0.1681, 0.02957, 0.829])
-            nskip = 17
+            start = np.array([0.02, -0.007, 0.01, 2.])
+            nskip = 5
             
         else:
             sbname =  'agn'
             start = np.array([0.54, -0.18, 0.028, 1.39])
             nskip = 1
             
-        mags = ['ks']
+        mags = [pipe_params.prior_colname]
         #['I', 'Ks', 'ch1']
         
         
@@ -219,7 +238,7 @@ if __name__ == '__main__':
             z_col = pipe_params.zspec_col
 
             best, fits, samples, sampler = fitpriors(photom[sbset], mag_col, z_col, start, 
-                                                     nsamples=5000, nthreads=4, nskip=nskip)
+                                                     nsamples=5000, nthreads=1, nskip=nskip)
             z0t, kmt1, kmt2, alpha1 = fits
 
             coeff_save_path = '{0}/{1}_{2}_prior_coeff.npz'.format(pipe_params.working_folder, filt, sbname)
@@ -252,7 +271,7 @@ if __name__ == '__main__':
 
             zrange = np.linspace(0, 4, 1000)
 
-            mrange = np.arange(19, 26, 2)
+            mrange = np.arange(17, 25, 1)
             data = photom[sbset]
 
             cut = (data[z_col] > 0.)
@@ -275,12 +294,12 @@ if __name__ == '__main__':
                 pzm = pzl(zrange, m, *best, lzc=0.001)
                 pzm /= np.trapz(pzm, zrange)
                 P = Ax.plot(zrange, pzm, color=colors[im], 
-                            lw=3, alpha=0.7, label='{0} = {1:d}'.format('$m_{I}$', m))
+                            lw=3, alpha=0.7, label='{0} = {1:.1f}'.format('$m_{I}$', m))
                 
                 
-                #cut = np.logical_and(mdata > m-0.5, mdata < m+0.5)
-                #Ax.hist(zdata[cut], normed=True, histtype='step', color=colors[im], linestyle='dashed',
-                #        bins=21, range=(0,5))
+                cut = np.logical_and(mdata > m-0.5, mdata < m+0.5)
+                Ax.hist(zdata[cut], normed=True, histtype='step', color=colors[im], linestyle='dashed',
+                        bins=51, range=(0,4))
                 
                 Ax.set_ylabel(r'$p\left( z \mid m_{I} \right)$')
                 Ax.set_xlabel('$z$')

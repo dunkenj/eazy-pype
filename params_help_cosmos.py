@@ -4,7 +4,7 @@ Main inputs:
 
 """
 working_folder = '/data2/ken/HELP/COSMOS'
-photometry_catalog = 'COSMOS2015-HELP_selected_20160613_processed_zs.fits'
+photometry_catalog = 'COSMOS2015-HELP_selected_20160613_processed_ap3_zs.fits'
 photometry_format = 'fits'
 
 filter_file = 'filter.COSMOS2015_filters.res'

@@ -1,34 +1,94 @@
-/home/duncan/.local/lib/python2.7/site-packages/sklearn/cross_validation.py:44: DeprecationWarning: This module was deprecated in version 0.18 in favor of the model_selection module into which all the refactored classes and functions are moved. Also note that the interface of the new CV iterators are different from that of this module. This module will be removed in 0.20.
+/software/local/lib64/python2.7/site-packages/sklearn/cross_validation.py:41: DeprecationWarning: This module was deprecated in version 0.18 in favor of the model_selection module into which all the refactored classes and functions are moved. Also note that the interface of the new CV iterators are different from that of this module. This module will be removed in 0.20.
   "This module will be removed in 0.20.", DeprecationWarning)
-/data2/ken/photoz/eazy-pype/validation.py:87: RuntimeWarning: invalid value encountered in greater
-  isgood = (input_data[fluxerr_colnames_ordered[i]] > 0.)
-/data2/ken/photoz/eazy-pype/validation.py:108: RuntimeWarning: invalid value encountered in less
-  upper_lims = np.where(np.logical_and(fluxes/fluxerrs < 2., fluxerrs > 0.))
-/data2/ken/photoz/eazy-pype/validation.py:108: RuntimeWarning: invalid value encountered in greater
-  upper_lims = np.where(np.logical_and(fluxes/fluxerrs < 2., fluxerrs > 0.))
-/data2/ken/photoz/eazy-pype/validation.py:112: RuntimeWarning: invalid value encountered in log10
-  color_a[:,1:] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
-/data2/ken/photoz/eazy-pype/validation.py:113: RuntimeWarning: invalid value encountered in log10
-  color_b[:,:-1] = -2.5*np.log10(fluxes[:,:-1]/fluxes[:,1:])
-/data2/ken/photoz/eazy-pype/validation.py:119: RuntimeWarning: invalid value encountered in less
-  drop = np.logical_and(color_a < -1., color_b > 1.)
-/data2/ken/photoz/eazy-pype/validation.py:119: RuntimeWarning: invalid value encountered in greater
-  drop = np.logical_and(color_a < -1., color_b > 1.)
-/data2/ken/photoz/eazy-pype/validation.py:120: RuntimeWarning: invalid value encountered in greater
-  spike = np.logical_and(color_a > 2.5, color_b < -2.5)
-/data2/ken/photoz/eazy-pype/validation.py:120: RuntimeWarning: invalid value encountered in less
-  spike = np.logical_and(color_a > 2.5, color_b < -2.5)
-/data2/ken/photoz/eazy-pype/validation.py:123: RuntimeWarning: invalid value encountered in less
-  criteria2 = np.logical_or(color_a < -5, color_b > 5)
-/data2/ken/photoz/eazy-pype/validation.py:123: RuntimeWarning: invalid value encountered in greater
-  criteria2 = np.logical_or(color_a < -5, color_b > 5)
-/data2/ken/photoz/eazy-pype/validation.py:128: RuntimeWarning: invalid value encountered in greater
-  good = (fluxerrs > 0)
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/cosmos.translate.opt already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs0.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs1.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs2.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs3.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs4.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs5.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
-WARNING: AstropyDeprecationWarning: /data2/ken/HELP/COSMOS/testing/training_subset1_zs6.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/EGS/egs.translate.opt already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/EGS/testing/training_subset1_zs0.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/EGS/testing/training_subset1_zs1.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/EGS/testing/training_subset1_zs2.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/EGS/testing/training_subset1_zs3.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/EGS/testing/training_subset1_zs4.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/EGS/testing/training_subset1_zs5.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+WARNING: AstropyDeprecationWarning: /data2/ken/HELP/EGS/testing/training_subset1_zs6.cat already exists. Automatically overwriting ASCII files is deprecated. Use the argument 'overwrite=True' in the future. [astropy.io.ascii.ui]
+/data2/ken/photoz/eazy-pype/hbcombination.py:565: RuntimeWarning: divide by zero encountered in log
+  pzarr_fbad[:, :, f] = np.exp(np.sum(np.log(pzb)/beta, axis=0))
+/data2/ken/photoz/eazy-pype/hbcombination.py:426: RuntimeWarning: invalid value encountered in double_scalars
+  zmz = np.trapz(pz_to_int[lo:up]*zgrid[lo:up], zgrid[lo:up]) / area
+eazy-pype.py:374: RuntimeWarning: invalid value encountered in divide
+  pz /= np.trapz(pz, zgrid, axis=1)[:, None]
+/software/local/lib64/python2.7/site-packages/numpy/core/_methods.py:26: RuntimeWarning: invalid value encountered in reduce
+  return umr_maximum(a, axis, None, out, keepdims)
+/data2/ken/photoz/eazy-pype/hbcombination.py:384: RuntimeWarning: invalid value encountered in less
+  cut = (pz < pz_c)
+/data2/ken/photoz/eazy-pype/hbcombination.py:396: RuntimeWarning: invalid value encountered in greater
+  p80 = (pz > pz_c)
+eazy-pype.py:374: RuntimeWarning: divide by zero encountered in divide
+  pz /= np.trapz(pz, zgrid, axis=1)[:, None]
+/data2/ken/photoz/eazy-pype/hbcombination.py:459: RuntimeWarning: invalid value encountered in double_scalars
+  zmz = np.trapz(pz_to_int[0:up]*zgrid[0:up], zgrid[0:up]) / area
+/data2/ken/photoz/eazy-pype/hbcombination.py:174: RuntimeWarning: invalid value encountered in divide
+  pz /= norm[:, None]
+/data2/ken/photoz/eazy-pype/priors.py:61: RuntimeWarning: invalid value encountered in add
+  zmt = np.maximum(1e-10, z0t + kmt1*(m0-14.) + kmt2*((m0-14.)**2))
+/data2/ken/photoz/eazy-pype/hbcombination.py:426: RuntimeWarning: invalid value encountered in double_scalars
+  zmz = np.trapz(pz_to_int[lo:up]*zgrid[lo:up], zgrid[lo:up]) / area
+/data2/ken/photoz/eazy-pype/hbcombination.py:565: RuntimeWarning: divide by zero encountered in log
+  pzarr_fbad[:, :, f] = np.exp(np.sum(np.log(pzb)/beta, axis=0))
+eazy-pype.py:374: RuntimeWarning: invalid value encountered in divide
+  pz /= np.trapz(pz, zgrid, axis=1)[:, None]
+/software/local/lib64/python2.7/site-packages/numpy/core/_methods.py:26: RuntimeWarning: invalid value encountered in reduce
+  return umr_maximum(a, axis, None, out, keepdims)
+/data2/ken/photoz/eazy-pype/hbcombination.py:384: RuntimeWarning: invalid value encountered in less
+  cut = (pz < pz_c)
+/data2/ken/photoz/eazy-pype/hbcombination.py:396: RuntimeWarning: invalid value encountered in greater
+  p80 = (pz > pz_c)
+/data2/ken/photoz/eazy-pype/priors.py:73: RuntimeWarning: invalid value encountered in divide
+  return np.squeeze(px/intgrl[:, None])
+/data2/ken/photoz/eazy-pype/hbcombination.py:174: RuntimeWarning: invalid value encountered in divide
+  pz /= norm[:, None]
+/data2/ken/photoz/eazy-pype/priors.py:61: RuntimeWarning: invalid value encountered in add
+  zmt = np.maximum(1e-10, z0t + kmt1*(m0-14.) + kmt2*((m0-14.)**2))
+/data2/ken/photoz/eazy-pype/hbcombination.py:459: RuntimeWarning: invalid value encountered in double_scalars
+  zmz = np.trapz(pz_to_int[0:up]*zgrid[0:up], zgrid[0:up]) / area
+/data2/ken/photoz/eazy-pype/hbcombination.py:565: RuntimeWarning: divide by zero encountered in log
+  pzarr_fbad[:, :, f] = np.exp(np.sum(np.log(pzb)/beta, axis=0))
+/data2/ken/photoz/eazy-pype/hbcombination.py:426: RuntimeWarning: invalid value encountered in double_scalars
+  zmz = np.trapz(pz_to_int[lo:up]*zgrid[lo:up], zgrid[lo:up]) / area
+eazy-pype.py:374: RuntimeWarning: invalid value encountered in divide
+  pz /= np.trapz(pz, zgrid, axis=1)[:, None]
+/software/local/lib64/python2.7/site-packages/numpy/core/_methods.py:26: RuntimeWarning: invalid value encountered in reduce
+  return umr_maximum(a, axis, None, out, keepdims)
+/data2/ken/photoz/eazy-pype/hbcombination.py:384: RuntimeWarning: invalid value encountered in less
+  cut = (pz < pz_c)
+/data2/ken/photoz/eazy-pype/hbcombination.py:396: RuntimeWarning: invalid value encountered in greater
+  p80 = (pz > pz_c)
+/data2/ken/photoz/eazy-pype/hbcombination.py:174: RuntimeWarning: invalid value encountered in divide
+  pz /= norm[:, None]
+/data2/ken/photoz/eazy-pype/priors.py:61: RuntimeWarning: invalid value encountered in add
+  zmt = np.maximum(1e-10, z0t + kmt1*(m0-14.) + kmt2*((m0-14.)**2))
+/data2/ken/photoz/eazy-pype/priors.py:73: RuntimeWarning: invalid value encountered in divide
+  return np.squeeze(px/intgrl[:, None])
+eazy-pype.py:374: RuntimeWarning: divide by zero encountered in divide
+  pz /= np.trapz(pz, zgrid, axis=1)[:, None]
+/data2/ken/photoz/eazy-pype/hbcombination.py:459: RuntimeWarning: invalid value encountered in double_scalars
+  zmz = np.trapz(pz_to_int[0:up]*zgrid[0:up], zgrid[0:up]) / area
+/data2/ken/photoz/eazy-pype/hbcombination.py:426: RuntimeWarning: invalid value encountered in double_scalars
+  zmz = np.trapz(pz_to_int[lo:up]*zgrid[lo:up], zgrid[lo:up]) / area
+/data2/ken/photoz/eazy-pype/hbcombination.py:565: RuntimeWarning: divide by zero encountered in log
+  pzarr_fbad[:, :, f] = np.exp(np.sum(np.log(pzb)/beta, axis=0))
+eazy-pype.py:374: RuntimeWarning: invalid value encountered in divide
+  pz /= np.trapz(pz, zgrid, axis=1)[:, None]
+/software/local/lib64/python2.7/site-packages/numpy/core/_methods.py:26: RuntimeWarning: invalid value encountered in reduce
+  return umr_maximum(a, axis, None, out, keepdims)
+/data2/ken/photoz/eazy-pype/hbcombination.py:384: RuntimeWarning: invalid value encountered in less
+  cut = (pz < pz_c)
+/data2/ken/photoz/eazy-pype/hbcombination.py:396: RuntimeWarning: invalid value encountered in greater
+  p80 = (pz > pz_c)
+/data2/ken/photoz/eazy-pype/priors.py:73: RuntimeWarning: invalid value encountered in divide
+  return np.squeeze(px/intgrl[:, None])
+/data2/ken/photoz/eazy-pype/hbcombination.py:174: RuntimeWarning: invalid value encountered in divide
+  pz /= norm[:, None]
+/data2/ken/photoz/eazy-pype/priors.py:61: RuntimeWarning: invalid value encountered in add
+  zmt = np.maximum(1e-10, z0t + kmt1*(m0-14.) + kmt2*((m0-14.)**2))
+eazy-pype.py:374: RuntimeWarning: divide by zero encountered in divide
+  pz /= np.trapz(pz, zgrid, axis=1)[:, None]
+/data2/ken/photoz/eazy-pype/hbcombination.py:459: RuntimeWarning: invalid value encountered in double_scalars
+  zmz = np.trapz(pz_to_int[0:up]*zgrid[0:up], zgrid[0:up]) / area

@@ -14,7 +14,7 @@ TEMPLATE_COMBOS      1                  # Template combination options:
                                         #        -2 : two templates, all permutations
                                         # a <or> 99 : all templates simultaneously
 NMF_TOLERANCE        1.e-4              # Tolerance for non-negative combinations (TEMPLATE_COMBOS=a)
-WAVELENGTH_FILE      templates/EAZY_v1.1_lines/lambda_v1.1.def # Wavelength grid definition file
+WAVELENGTH_FILE      templates/lambda.ext.def # Wavelength grid definition file
 TEMP_ERR_FILE        templates/TEMPLATE_ERROR.v2.0.zfourge # Template error definition file
 TEMP_ERR_A2          ?              # Template error amplitude
 SYS_ERR              ?               # Systematic flux error (% of flux)
@@ -31,7 +31,7 @@ CACHE_FILE           ?     # Template cache file (in OUTPUT_DIRECTORY)
 CATALOG_FILE         ? # Catalog data file
 MAGNITUDES           n                  # Catalog photometry in magnitudes rather than f_nu fluxes
 NOT_OBS_THRESHOLD    -89                # Ignore flux point if <NOT_OBS_THRESH
-N_MIN_COLORS         4                  # Require N_MIN_COLORS to fit
+N_MIN_COLORS         5                  # Require N_MIN_COLORS to fit
 
 ## Output Files
 OUTPUT_DIRECTORY     ?             # Directory to put output files in

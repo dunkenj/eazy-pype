@@ -31,7 +31,7 @@ CACHE_FILE           ?     # Template cache file (in OUTPUT_DIRECTORY)
 CATALOG_FILE         ? # Catalog data file
 MAGNITUDES           n                  # Catalog photometry in magnitudes rather than f_nu fluxes
 NOT_OBS_THRESHOLD    -89                # Ignore flux point if <NOT_OBS_THRESH
-N_MIN_COLORS         4                  # Require N_MIN_COLORS to fit
+N_MIN_COLORS         5                  # Require N_MIN_COLORS to fit
 
 ## Output Files
 OUTPUT_DIRECTORY     ?             # Directory to put output files in
