@@ -1,13 +1,9 @@
 # eazy-pype
-Python pipeline to automate the calculation of photo-z's with [EAzY](http://github.com/gbrammer/eazy-photoz/) for large fields.
+Python pipeline to automate the calculation of photo-z's with [EAzY](http://github.com/gbrammer/eazy-photoz/) for large fields. Including calculation of zeropoint offsets from a spectroscopic training set, parallelisation of fitting into multiple subsets for speed improvements, calibration of redshift posteriors errors using spectroscopic training sets and Hierarchical Bayesian combination of estimates using multiple template sets.
 
-Steps include:
- * Zeropoint offsets from spectroscopic training set, including cross validation of multiple spec-z subsets.
- * Parallelisation of fitting into multiple sub-sets for speed improvements
- * Calibration of P(z) errors using spectroscopic training sets (again including cross validation)
- * Hierarchical Bayesian combination of estimates using multiple template sets
+Optionally, additional machine-learning estimates using the [GPz](https://github.com/OxfordML/GPz/tree/695a83aa3959d1c849046dd2bad25044603f2c78) Gaussian Process redshift code can also be folded into the Hierarchical Bayesian combination procedure to significantly improve the accuracy of the estimates in fields with good training samples available.
 
-
+The full procedure and the motivations behind the methodology are presented in [Duncan et al. (2018a)](https://ui.adsabs.harvard.edu/link_gateway/2018MNRAS.473.2655D/doi:10.1093/mnras/stx2536) and [Duncan et al. (2018b)](https://ui.adsabs.harvard.edu/link_gateway/2018MNRAS.477.5177D/doi:10.1093/mnras/sty940).
 
 ## Requirements
  * Working [EAzY](http://github.com/gbrammer/eazy-photoz/) installation
@@ -20,3 +16,11 @@ Steps include:
      * emcee==2.2.1
      * scikit_learn==0.19.1
      * smpy==1.0.3
+     * gpz==1.0 - [GPz](https://github.com/OxfordML/GPz/tree/695a83aa3959d1c849046dd2bad25044603f2c78)
+
+
+## Usage
+
+```
+python eazy-pype.py -p params.py
+```
