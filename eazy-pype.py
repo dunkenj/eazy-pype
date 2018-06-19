@@ -18,6 +18,7 @@ from astropy.utils.console import ProgressBar
 from sklearn.cross_validation import ShuffleSplit
 from scipy.stats import norm
 
+# Other Eazy-pype Functions
 import validation
 import zeropoints
 import priors
@@ -164,9 +165,6 @@ tempfilt, coeffs, temp_sed, pz = readEazyBinary(MAIN_OUTPUT_FILE='photz', \
     By default assumes that CACHE_FILE is MAIN_OUTPUT_FILE+'.tempfilt'.
     Specify the full filename if otherwise.
     """
-
-    #root='COSMOS/OUTPUT/cat3.4_default_lines_zp33sspNoU'
-
     root = OUTPUT_DIRECTORY+'/'+MAIN_OUTPUT_FILE
 
     ###### .tempfilt
@@ -244,7 +242,7 @@ tempfilt, coeffs, temp_sed, pz = readEazyBinary(MAIN_OUTPUT_FILE='photz', \
 
 # Define functions
 def runeazy(params='zphot.param', translate=None, zeropoints=None,
-            eazypath = '/data2/ken/photoz/eazy-photoz/src/eazy', verbose=True):
+            eazypath = pipe_params.eazypath, verbose=True):
     """ Run EAZY for a given params file.
 
     Args:
@@ -284,12 +282,6 @@ def eazyfunction_worker(inputQueue, outputQueue, outLock, template,
         outdir: string - Path to output directory (if not current directory)
         clean: boolean - If True, tidy up and remove intermediate files.
 
-
-    Main steps:
-        1. Modify EazyParam class to corresponding catalog, filter,
-           output paths etc.
-        2. Run Eazy with generated params file ('runeazy')
-
     """
     for i in iter(inputQueue.get, 'STOP'):
         params_path = '{0}/full/{1}/{2}.{3}.param'.format(pipe_params.working_folder, i+1, template, i+1)
@@ -301,8 +293,6 @@ def eazyfunction_worker(inputQueue, outputQueue, outLock, template,
         outLock.acquire()
         outputQueue.put(params_path)
         outLock.release()
-
-
 
 def hb_worker(inputQueue, outputQueue, outLock):
     """ Do Hierarchical Bayesian combination for subset of catalog
@@ -321,9 +311,9 @@ def hb_worker(inputQueue, outputQueue, outLock):
             if pipe_params.ir_gpz_path != None:
                 IRAGN = (photom['IRClass'] >= 4)
 
-            if pipe_params.xray_gpz_path != None:          
+            if pipe_params.xray_gpz_path != None:
                 XR = (photom['XrayClass'] == 1)
-            
+
             if pipe_params.opt_gpz_path != None:
                 try:
                     OPT = (photom['mqcAGN'][sbset*mcut] == 'True')
@@ -349,11 +339,11 @@ def hb_worker(inputQueue, outputQueue, outLock):
 
                 pzprior = np.ones_like(pz)
                 pzprior /= np.trapz(pzprior, zgrid, axis=1)[:, None]
- 
+
                 if pipe_params.include_prior_gal:
                     pzprior[GAL] = priors.pzl(zgrid, mags[GAL], *best_prior_params_gal, lzc=0.003)
-                
-                if pipe_params.include_prior_agn:                            
+
+                if pipe_params.include_prior_agn:
                     pzprior[AGN] = priors.pzl(zgrid, mags[AGN], *best_prior_params_agn, lzc=0.000)
 
                 pzprior_nomag = np.ones_like(zgrid)
@@ -382,9 +372,9 @@ def hb_worker(inputQueue, outputQueue, outLock):
             alphas = []
             gpz = []
             scale_bands = []
-                    
+
             AGN = (photom['AGN'] == 1)
-            
+
             if pipe_params.ir_gpz_path != None:
                 IRAGN = (photom['IRClass'] >= 4)
                 gp_ir, bands_ir, alpha_values_ir = load_gp('{0}'.format(pipe_params.ir_gpz_path))
@@ -393,44 +383,42 @@ def hb_worker(inputQueue, outputQueue, outLock):
                 bands.append(bands_ir)
                 alphas.append(alpha_values_ir)
                 gpz.append(gp_ir)
-                
-            if pipe_params.xray_gpz_path != None:          
+
+            if pipe_params.xray_gpz_path != None:
                 XR = (photom['XrayClass'] == 1)
                 gp_xray, bands_xray, alpha_values_xray = load_gp('{0}'.format(pipe_params.xray_gpz_path))
-    
+
                 sets.append(XR)
                 bands.append(bands_xray)
                 alphas.append(alpha_values_xray)
                 gpz.append(gp_xray)
-    
+
             if pipe_params.opt_gpz_path != None:
                 try:
                     OPT = (photom['mqcAGN'] == 'True')
                 except:
                     OPT = AGN
-            
+
                 try:
                     gp_opt, bands_opt, alpha_values_opt, sc = load_gp('{0}'.format(pipe_params.opt_gpz_path))
                     scale_bands.append(sc)
                 except:
                     gp_opt, bands_opt, alpha_values_opt = load_gp('{0}'.format(pipe_params.opt_gpz_path))
-    
+
                 sets.append(OPT)
                 bands.append(bands_opt)
                 alphas.append(alpha_values_opt)
-                gpz.append(gp_opt)   
+                gpz.append(gp_opt)
 
-    
             GAL = np.invert(AGN)
-          
-            
+
             for path in pipe_params.gal_gpz_paths:
                 try:
                     g, b, a, sc = load_gp('{0}'.format(path))
                     scale_bands.append(sc)
                 except:
                     g, b, a = load_gp('{0}'.format(path))
-                            
+
                 sets.append(GAL)
                 bands.append(b)
                 alphas.append(a)
@@ -447,9 +435,9 @@ def hb_worker(inputQueue, outputQueue, outLock):
 
                         sigma *= hb.alphas_mag(photom[pipe_params.prior_colname][s][K],
                                               *alphas[ix]).reshape(sigma.shape)
-                
+
                         pz_gp = []
-                                            
+
                         for iz, z in enumerate(mu):
                             gaussian = norm(loc=mu[iz], scale=sigma[iz])
                             pz_gp.append(gaussian.pdf(zgrid))
@@ -508,13 +496,13 @@ def save_gp(path, gp, bands, alpha_values):
 
 def load_gp(path):
     out = pickle.load(open(path, "rb"))
-    
+
     gp = out['gp']
     bands = out['bands']
     alpha_values = out['alpha']
     try:
         scale_band = out['scale_band']
-        return gp, bands, alpha_values, scale_band    
+        return gp, bands, alpha_values, scale_band
     except:
         return gp, bands, alpha_values
 
@@ -989,11 +977,11 @@ if __name__ == '__main__':
 
         keep_cols = ['id', 'z_spec', 'AGN',
                      pipe_params.prior_colname]
-        
+
         for col in ['IRClass', 'XrayClass', 'mqcAGN']:
             if col in photometry.colnames:
                 keep_cols.append(col)
-        
+
         for col in photometry.colnames:
             if np.logical_or(col.endswith(pipe_params.flux_col), col.endswith(pipe_params.fluxerr_col)):
                 keep_cols.append(col)
@@ -1037,11 +1025,11 @@ if __name__ == '__main__':
 
         keep_cols = ['id', 'z_spec', 'AGN',
                      pipe_params.prior_colname]
-                     
+
         for col in ['IRClass', 'XrayClass', 'mqcAGN']:
             if col in photometry.colnames:
                 keep_cols.append(col)
-                
+
         for col in photometry.colnames:
             if np.logical_or(col.endswith(pipe_params.flux_col), col.endswith(pipe_params.fluxerr_col)):
                 keep_cols.append(col)
@@ -1049,7 +1037,7 @@ if __name__ == '__main__':
                 keep_cols.append(col)
             if col.endswith(pipe_params.magerr_col):
                 keep_cols.append(col)
-                
+
         with ProgressBar(nsteps) as bar:
             for i in range(nsteps):
                 ### Make folders
@@ -1092,7 +1080,7 @@ if __name__ == '__main__':
                     #if np.logical_and(itx==0, np.logical_or(i == 50, i == 96)):
                     #    ezparam['N_MIN_COLORS'] = '6'
                     #    print('Modifying N_min_col')
-                        
+
                     ezparam['CATALOG_FILE'] = '{0}/full/{1}/{2}.cat'.format(pipe_params.working_folder, i+1, i+1)
                     ezparam['MAIN_OUTPUT_FILE'] = '{0}.{1}'.format(template, i+1)
 
