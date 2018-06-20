@@ -27,4 +27,4 @@ After setting the relevant parameters in the `params.py` file (or similar), the 
 python eazy-pype.py -p params.py
 ```
 
-See the [User Guide](https://github.com/dunkenj/eazy-pype/docs/UserGuide.md) for a more detailed description of how the code is run, the stages involved and the typical procedure used when applying the dataset to a large dataset.
+See the [User Guide](https://github.com/dunkenj/eazy-pype/docs/UserGuide.md) for a more detailed description of how the code is run, the stages involved and the typical procedure used when applying the dataset to a large dataset. Note, these instructions refer to its application to the HELP and the LOFAR Surveys large fields.
